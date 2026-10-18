@@ -61,7 +61,9 @@ export function formatGraphSummary(graph: Graph): string {
   const pages = count((n) => n.kind === 'file' && n.role === 'page');
   const routes = count((n) => n.kind === 'file' && n.role === 'route');
   const databases = graph.nodes.filter((n) => n.kind === 'database').map((n) => n.label);
-  const services = graph.nodes.filter((n) => n.kind === 'service').map((n) => n.label);
+  const services = graph.nodes.flatMap((n) =>
+    n.kind === 'service' && n.unidentified !== true ? [n.label] : [],
+  );
   const settings = count((n) => n.kind === 'setting');
 
   const lines = [

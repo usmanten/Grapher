@@ -3,7 +3,6 @@ import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 
 import {
-  analyzeProject,
   assertNoSecrets,
   currentExplanations,
   loadCache,
@@ -11,7 +10,7 @@ import {
   scanProject,
 } from '@grapher/core';
 
-import { explainRequest, explainSave, writeOutputs } from './explain.js';
+import { analyze, explainRequest, explainSave, writeOutputs } from './explain.js';
 import { formatGraphSummary, formatScanSummary } from './format.js';
 import { setup } from './setup.js';
 
@@ -98,7 +97,7 @@ export async function main(argv: readonly string[], io: Io): Promise<number> {
       io.out(values.save ? await explainSave(folder) : await explainRequest(folder));
       return 0;
     }
-    const { graph, scan } = await analyzeProject(folder);
+    const { graph, scan } = await analyze(folder);
     if (values.json) {
       assertNoSecrets(graph);
       io.out(JSON.stringify(graph, null, 2));

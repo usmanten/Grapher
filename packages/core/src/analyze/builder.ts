@@ -177,7 +177,10 @@ export class GraphBuilder {
         return 'connects to';
       case 'uses-service': {
         const target = this.nodes.get(draft.to);
-        return target?.kind === 'service' ? `uses ${target.label}` : 'uses service';
+        if (target?.kind !== 'service') return 'uses service';
+        return target.unidentified === true
+          ? `uses the ${target.label} package`
+          : `uses ${target.label}`;
       }
       case 'reads-setting':
         return 'reads setting';

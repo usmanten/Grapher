@@ -75,6 +75,8 @@ The Grapher CLI never talks to an AI service itself ([ADR 0003](decisions/0003-n
 3. `grapher explain --save` keeps answers only for connections that were asked about, cleans them to plain text of at most 600 characters, refuses the whole answer if anything looks like a secret, and stores them in `.grapher/explanations.json`.
 4. Each explanation is saved with a **fingerprint** of its connection (kind, label, tables and code lines, not line numbers). When the code changes, the fingerprint changes and the connection is explained again; otherwise the saved text is reused, so repeat runs cost almost nothing.
 
+**Unknown packages** come first. Before any connection is explained, `grapher explain` prints an **identify request** listing, by name only, the packages Grapher doesn't recognize. Claude answers with a kind for each (`service`, `database`, `library` or `unknown`) and a short label. `--save` keeps answers only for names that were asked about, records a missing answer as `unknown` so it is never asked again, and stores the result in `.grapher/packages.json`. On later runs, services and databases appear on the map marked "identified by AI", libraries stay off it, and anything still unidentified shows as a gray "not yet identified" box. Running `grapher graph` without Claude shows every unknown package that way.
+
 `grapher setup` installs the command file at `~/.claude/commands/grapher.md`, filled in with the path to this CLI. It only ever replaces a file it wrote itself.
 
 ## The viewer (`packages/viewer`)
@@ -107,4 +109,4 @@ Paths are relative and use forward slashes on every platform, so output is stabl
 
 - **Nodes** are files (with a role such as page, route or component, and a URL for pages and routes), databases, outside services, and settings (a name and whether it is public, never a value).
 - **Connections** go from the code doing the action to what it uses. Each has a kind, a plain-word label, optional details (tables or HTTP methods) and up to five `path:line` locations.
-- **Warnings** flag things like a Pages Router project or a file that failed to parse, and `unknownPackages` lists packages Grapher could not classify, by name only.
+- **Warnings** flag things like a Pages Router project or a file that failed to parse, and `unknownPackages` lists packages nobody has identified yet, by name only.

@@ -35,6 +35,8 @@ export interface DatabaseNode {
   via?: string;
   /** True if the database was guessed from a package name rather than its client code. */
   inferred?: boolean;
+  /** Set when Claude identified the package by its name, because Grapher didn't know it. */
+  identifiedBy?: 'ai';
 }
 
 export interface ServiceNode {
@@ -44,6 +46,10 @@ export interface ServiceNode {
   label: string;
   /** The npm package or web host that identified it. */
   source: string;
+  /** Set when Claude identified the package by its name, because Grapher didn't know it. */
+  identifiedBy?: 'ai';
+  /** True for a package nobody has identified yet. It may or may not talk to anything outside the app. */
+  unidentified?: boolean;
 }
 
 export interface SettingNode {

@@ -108,6 +108,107 @@ describe('grapher explain', () => {
   });
 });
 
+function requestedPackages(prompt: string): string[] {
+  const marker = /^(GRAPHER-DATA-[0-9a-f]+) BEGIN$/m.exec(prompt)?.[1] ?? '';
+  const data = prompt.split(`${marker} BEGIN\n`)[1]?.split(`\n${marker} END`)[0] ?? '[]';
+  return JSON.parse(data) as string[];
+}
+
+describe('identifying unknown packages', () => {
+  beforeEach(async () => {
+    await writeFile(
+      path.join(dir, 'lib/ship.ts'),
+      [
+        "import { Courier } from 'courier-labels';",
+        "import { tween } from 'tween-magic';",
+        "import { mystery } from 'mystery-pkg';",
+        "import { store } from 'tiny-kv';",
+        'export const c = new Courier(); tween(); mystery(); store();',
+      ].join('\n'),
+    );
+  });
+
+  it('shows unknown packages as gray boxes until Claude identifies them by name', async () => {
+    const graph = await run('graph', dir, '--json');
+    const parsed = JSON.parse(graph.out) as { nodes: { id: string; unidentified?: boolean }[] };
+    expect(parsed.nodes.find((n) => n.id === 'service:courier-labels')?.unidentified).toBe(true);
+
+    const request = await run('explain', dir);
+    expect(request.out).toContain('GRAPHER IDENTIFY REQUEST: 4 packages');
+    expect(requestedPackages(request.out)).toEqual([
+      'courier-labels',
+      'mystery-pkg',
+      'tiny-kv',
+      'tween-magic',
+    ]);
+    // Names only: no code or file names go out with the request.
+    expect(request.out).not.toContain('lib/ship.ts');
+    expect(request.out).not.toContain('new Courier');
+
+    await writeFile(
+      path.join(dir, '.grapher/answers.json'),
+      JSON.stringify({
+        'courier-labels': { kind: 'service', label: 'Courier Labels' },
+        'tween-magic': { kind: 'library', label: 'tween-magic' },
+        'tiny-kv': { kind: 'database', label: 'TinyKV' },
+        'not-asked': { kind: 'service', label: 'Sneaky' },
+        // mystery-pkg left out on purpose: it is recorded as unknown.
+      }),
+    );
+    const save = await run('explain', dir, '--save');
+    expect(save.code).toBe(0);
+    expect(save.out).toContain('Identified 4 packages: 2 added to the map');
+
+    const after = JSON.parse((await run('graph', dir, '--json')).out) as {
+      nodes: { id: string; label?: string; identifiedBy?: string; unidentified?: boolean }[];
+      connections: { to: string; label: string }[];
+    };
+    const ids = after.nodes.map((n) => n.id);
+    expect(after.nodes.find((n) => n.id === 'service:courier-labels')).toMatchObject({
+      label: 'Courier Labels',
+      identifiedBy: 'ai',
+    });
+    expect(after.nodes.find((n) => n.id === 'database:tiny-kv')).toMatchObject({
+      label: 'TinyKV',
+      identifiedBy: 'ai',
+    });
+    expect(ids).not.toContain('service:tween-magic');
+    expect(ids).not.toContain('service:not-asked');
+    expect(after.nodes.find((n) => n.id === 'service:mystery-pkg')?.unidentified).toBe(true);
+    expect(after.connections.find((c) => c.to === 'service:mystery-pkg')?.label).toBe(
+      'uses the mystery-pkg package',
+    );
+
+    // Every package has an answer now, so the next request is about connections.
+    const next = await run('explain', dir);
+    expect(next.out).toContain('GRAPHER EXPLAIN REQUEST');
+    const saved = await readFile(path.join(dir, '.grapher/packages.json'), 'utf8');
+    expect(JSON.parse(saved)).toMatchObject({ entries: { 'mystery-pkg': { kind: 'unknown' } } });
+  });
+
+  it('drops tampered entries in the saved package file', async () => {
+    await mkdir(path.join(dir, '.grapher'), { recursive: true });
+    await writeFile(
+      path.join(dir, '.grapher/packages.json'),
+      JSON.stringify({
+        entries: {
+          'courier-labels': { kind: 'service', label: 'Courier\u0000 Labels' },
+          'tween-magic': { kind: 'evil', label: 'x' },
+          '../escape': { kind: 'service', label: 'x' },
+        },
+      }),
+    );
+    const request = await run('explain', dir);
+    expect(requestedPackages(request.out)).toEqual(['mystery-pkg', 'tiny-kv', 'tween-magic']);
+    const graph = JSON.parse((await run('graph', dir, '--json')).out) as {
+      nodes: { id: string; label?: string }[];
+    };
+    expect(graph.nodes.find((n) => n.id === 'service:courier-labels')?.label).toBe(
+      'Courier Labels',
+    );
+  });
+});
+
 describe('grapher setup', () => {
   it('installs the /grapher command with this CLI filled in', async () => {
     const file = await setup(path.join(dir, '.claude'));

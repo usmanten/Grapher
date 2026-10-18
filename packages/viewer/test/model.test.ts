@@ -108,6 +108,37 @@ describe('text', () => {
     expect(request && describeConnection(index, request)).toContain('(/api/users)');
   });
 
+  it('marks packages identified by AI, and gray boxes for unidentified ones', () => {
+    const files: Graph['nodes'] = [{ id: 'file:a.ts', kind: 'file', path: 'a.ts', role: 'module' }];
+    const nodes: Graph['nodes'] = [
+      ...files,
+      { id: 'service:x', kind: 'service', label: 'X', source: 'x', identifiedBy: 'ai' },
+      { id: 'service:y', kind: 'service', label: 'y', source: 'y', unidentified: true },
+      { id: 'database:z', kind: 'database', label: 'Z', via: 'z', identifiedBy: 'ai' },
+    ];
+    const small = indexGraph({
+      ...graph,
+      nodes,
+      connections: [
+        {
+          id: 'file:a.ts->service:y',
+          from: 'file:a.ts',
+          to: 'service:y',
+          kind: 'uses-service',
+          label: 'uses the y package',
+          locations: [{ path: 'a.ts', line: 1, role: 'import' }],
+        },
+      ],
+    });
+    const [, x, y, z] = nodes;
+    expect(x && describeNode(x)).toBe('Outside service, identified by AI');
+    expect(y && describeNode(y)).toBe('Package, not yet identified');
+    expect(y && kindGroup(y)).toBe('package');
+    expect(z && describeNode(z)).toBe('Database, used through z, identified by AI');
+    const c = small.connections.get('file:a.ts->service:y');
+    expect(c && describeConnection(small, c)).toContain("doesn't know yet");
+  });
+
   it('groups nodes by color kind', () => {
     expect(graph.nodes.map(kindGroup)).not.toContain(undefined);
   });

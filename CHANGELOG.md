@@ -30,4 +30,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Links between pages: `<Link href>`, menu items with `href`, `router.push`, `redirect()`, and return addresses handed to services, like a Stripe checkout's `success_url`.
 - Supabase database functions called with `.rpc()`.
 - Shippo and EasyPost in the list of known services.
+- Packages Grapher doesn't recognize show on the map as gray "not yet identified" boxes. `/grapher` asks Claude what each one is, by name only, and outside services and databases it finds are added to the map marked "identified by AI". Answers are saved in `.grapher/packages.json`.
 - CI with linting, type checks, tests with coverage, CodeQL, dependency review, a dependency audit and secret scanning.
