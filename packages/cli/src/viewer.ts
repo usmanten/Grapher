@@ -17,10 +17,16 @@ export async function loadViewerTemplate(): Promise<string> {
 }
 
 /** Builds the viewer page for a project. */
-export function viewerPage(template: string, graph: Graph, scan: ScanResult): string {
+export function viewerPage(
+  template: string,
+  graph: Graph,
+  scan: ScanResult,
+  explanations: Record<string, string> = {},
+): string {
   return renderViewer(template, {
     graph,
     root: scan.root,
+    explanations,
     protectedFiles: scan.skipped.filter((s) => s.reason === 'secret-file').map((s) => s.path),
   });
 }

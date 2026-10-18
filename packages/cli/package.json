@@ -9,7 +9,8 @@
     "grapher": "./dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "assets"
   ],
   "engines": {
     "node": ">=22.12.0"
