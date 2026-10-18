@@ -48,6 +48,7 @@ test('explores the sample app without errors or blocked content', async ({ page:
     'components/SignupForm.tsx → users/route.ts',
   );
   await expect(panel).toContainText('(/api/users)');
+  await expect(panel.locator('pre').first()).toContainText("fetch('/api/users'");
   const link = panel.getByRole('link', { name: /^components\/SignupForm\.tsx:\d+$/ });
   await expect(link).toHaveAttribute(
     'href',
