@@ -61,6 +61,22 @@ describe('renderViewer', () => {
     expect(page).toContain("$$ $' $` $1");
   });
 
+  it('accepts ordinary project folders that mix capitals and digits', () => {
+    for (const root of [
+      '/home/usman/code/2024/FinalProject-Web',
+      'C:\\Users\\Usman\\OneDrive\\Desktop\\Projects\\Next14-Store',
+    ]) {
+      expect(() => renderViewer(TEMPLATE, { ...data('x'), root })).not.toThrow();
+    }
+  });
+
+  it('still refuses a project folder named like a key', () => {
+    const key = ['Zq8vK2mP', 'x7LwR4tN', 'b9YcH3jF', 's6DgA1eU'].join('');
+    expect(() => renderViewer(TEMPLATE, { ...data('x'), root: `/home/you/${key}` })).toThrow(
+      'looks like a secret',
+    );
+  });
+
   it('refuses a template without exactly one placeholder', () => {
     expect(() => renderViewer('<p></p>', data('x'))).toThrow('exactly once');
     expect(() => renderViewer(TEMPLATE + TEMPLATE, data('x'))).toThrow('exactly once');
