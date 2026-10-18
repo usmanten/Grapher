@@ -1,5 +1,5 @@
 import { constants } from 'node:fs';
-import { lstat, mkdir, open } from 'node:fs/promises';
+import { lstat, mkdir, open, rm } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { Graph } from '../graph/types.js';
@@ -58,4 +58,50 @@ export async function writeViewer(root: string, html: string): Promise<string> {
   const file = path.join(await outputDir(root), 'index.html');
   await writeNoFollow(file, html);
   return file;
+}
+
+/** Largest file Grapher will read back from its own output folder. */
+const MAX_OUTPUT_READ_BYTES = 2 * 1024 * 1024;
+
+/**
+ * Reads a file Grapher keeps in `.grapher/`, like the explanation cache.
+ * Returns undefined if it doesn't exist. Refuses symlinks and oversized files,
+ * since the folder sits inside a project that may not be trusted.
+ */
+export async function readOutputFile(root: string, name: string): Promise<string | undefined> {
+  const dir = path.join(root, OUTPUT_DIR);
+  if (await isSymlink(dir)) throw new Error(`Refusing to read: ${OUTPUT_DIR} is a symlink`);
+  let handle;
+  try {
+    handle = await open(path.join(dir, name), constants.O_RDONLY | constants.O_NOFOLLOW);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw new Error(`Could not read ${OUTPUT_DIR}/${name}`, { cause: error });
+  }
+  try {
+    const stats = await handle.stat();
+    if (!stats.isFile() || stats.size > MAX_OUTPUT_READ_BYTES) {
+      throw new Error(`Refusing to read ${OUTPUT_DIR}/${name}: not a regular file or too large`);
+    }
+    return await handle.readFile('utf8');
+  } finally {
+    await handle.close();
+  }
+}
+
+/** Saves a file into `.grapher/` after checking it for secrets, and returns its path. */
+export async function writeOutputFile(
+  root: string,
+  name: string,
+  contents: string,
+): Promise<string> {
+  assertNoSecrets(contents);
+  const file = path.join(await outputDir(root), name);
+  await writeNoFollow(file, contents);
+  return file;
+}
+
+/** Deletes a file from `.grapher/` if it exists. */
+export async function removeOutputFile(root: string, name: string): Promise<void> {
+  await rm(path.join(root, OUTPUT_DIR, name), { force: true });
 }
