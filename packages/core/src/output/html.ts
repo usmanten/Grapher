@@ -30,7 +30,11 @@ export function scriptSafeJson(value: unknown): string {
 
 /** Fills the viewer template with the project's data. */
 export function renderViewer(template: string, data: ViewerData): string {
-  assertNoSecrets(data);
+  const { root, ...rest } = data;
+  assertNoSecrets(rest);
+  // A whole path like `/home/you/code/2024/FinalProject-Web` reads as one long random
+  // string, so check the project folder one folder name at a time instead.
+  assertNoSecrets({ root: root.split(/[\\/]/) });
   const at = template.indexOf(VIEWER_DATA_PLACEHOLDER);
   if (at === -1 || template.includes(VIEWER_DATA_PLACEHOLDER, at + 1)) {
     throw new Error('The viewer template must contain the data placeholder exactly once');
