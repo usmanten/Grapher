@@ -1,9 +1,11 @@
 import { readFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 
-import { analyzeProject, OUTPUT_DIR, scanProject, writeGraph } from '@grapher/core';
+import { analyzeProject, OUTPUT_DIR, scanProject, writeGraph, writeViewer } from '@grapher/core';
 
 import { formatGraphSummary, formatScanSummary } from './format.js';
+import { loadViewerTemplate, viewerPage } from './viewer.js';
 
 export interface Io {
   out(text: string): void;
@@ -13,7 +15,8 @@ export interface Io {
 const HELP = `Usage: grapher <command> [options]
 
 Commands:
-  graph [folder]  Map how the project connects and save it to .grapher/graph.json
+  graph [folder]  Map how the project connects and save it to .grapher/
+                  (open .grapher/index.html in your browser to explore it)
   scan [folder]   List the files Grapher would analyze, and what it skips
 
 Options:
@@ -72,8 +75,12 @@ export async function main(argv: readonly string[], io: Io): Promise<number> {
       io.out(JSON.stringify(graph, null, 2));
       return 0;
     }
+    const template = await loadViewerTemplate();
     await writeGraph(scan.root, graph);
-    io.out(`${formatGraphSummary(graph)}\n\nSaved ${OUTPUT_DIR}/graph.json`);
+    const page = await writeViewer(scan.root, viewerPage(template, graph, scan));
+    io.out(
+      `${formatGraphSummary(graph)}\n\nSaved ${OUTPUT_DIR}/graph.json and ${OUTPUT_DIR}/index.html\nOpen it in your browser: ${pathToFileURL(page).href}`,
+    );
     return 0;
   } catch (error) {
     io.err(`grapher: ${(error as Error).message}`);

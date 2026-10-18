@@ -10,3 +10,4 @@ Each file here records one significant decision: the context, what was decided, 
 | 0004 | [Secret files are denylisted and all reads go through one gate](0004-secret-denylist-and-read-gate.md)       |
 | 0005 | [Stay on TypeScript 6 for now](0005-typescript-6.md)                                                         |
 | 0006 | [Parse code in memory, from approved files only](0006-in-memory-parsing.md)                                  |
+| 0007 | [Ship the viewer as one self-contained HTML file](0007-single-file-viewer.md)                                |

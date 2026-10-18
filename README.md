@@ -11,9 +11,9 @@ Modern tools make it easy to generate a lot of code quickly. Understanding how a
 
 It is built for students and anyone still learning how real projects are structured.
 
-> **Status:** early development. The scanner and connection detection work today. The graph, viewer and explanations are being built. See the [roadmap](#roadmap).
+> **Status:** early development. Scanning, connection detection and the interactive viewer work today. The graph, viewer and explanations are being built. See the [roadmap](#roadmap).
 
-<!-- Screenshot of the viewer goes here once it ships in v0.1. -->
+![Grapher's file view, showing the users API route, what calls it, and what it uses](docs/images/viewer-file-view.png)
 
 ## What it does
 
@@ -48,11 +48,13 @@ Scanned /home/you/my-app
 
 Add `--json` for machine-readable output.
 
-To map how the project connects and save it to `.grapher/graph.json`:
+To map how the project connects:
 
 ```sh
 pnpm grapher graph /path/to/your/nextjs-app
 ```
+
+This saves `.grapher/graph.json` and `.grapher/index.html` in your project. Open `index.html` in your browser to explore it: pick a file on the left, click a line to see what it does, and follow **Trace full flow** to see everything that leads to and from that file. The page works offline and loads nothing from the internet.
 
 Try it on the included sample app with `pnpm grapher graph examples/sample-app`.
 
@@ -89,7 +91,7 @@ See [SECURITY.md](SECURITY.md) and the [threat model](docs/threat-model.md) for 
 
 - [x] Project scanner with secret-file protection
 - [x] Connection detection: imports, pages, API routes, fetch calls, server actions, Prisma, Drizzle, Supabase, outside services, settings
-- [ ] Interactive viewer with file view, full-flow tracing and an overview
+- [x] Interactive viewer with file view, full-flow tracing and an overview
 - [ ] `/grapher` command for Claude Code with cached explanations
 - [ ] Snippet scrubbing and a final output safety check
 - [ ] v0.1.0 release
