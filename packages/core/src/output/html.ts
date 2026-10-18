@@ -1,4 +1,5 @@
 import type { Graph } from '../graph/types.js';
+import { assertNoSecrets } from '../safety/check.js';
 
 /** Everything the viewer page needs, embedded into it as JSON. */
 export interface ViewerData {
@@ -27,6 +28,7 @@ export function scriptSafeJson(value: unknown): string {
 
 /** Fills the viewer template with the project's data. */
 export function renderViewer(template: string, data: ViewerData): string {
+  assertNoSecrets(data);
   const at = template.indexOf(VIEWER_DATA_PLACEHOLDER);
   if (at === -1 || template.includes(VIEWER_DATA_PLACEHOLDER, at + 1)) {
     throw new Error('The viewer template must contain the data placeholder exactly once');

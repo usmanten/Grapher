@@ -40,6 +40,7 @@ export function DetailsPanel({ index, root, selected }: Props) {
                 {loc.path}:{loc.line}
               </a>
               <span className="ref-role">{loc.role === 'import' ? 'brings it in' : 'uses it'}</span>
+              {loc.code && <pre>{loc.code}</pre>}
             </li>
           ))}
         </ul>
@@ -47,7 +48,7 @@ export function DetailsPanel({ index, root, selected }: Props) {
       {to.kind === 'setting' && (
         <div className="secret">
           <span aria-hidden="true">🔒</span> Only the setting&apos;s name is shown. Grapher never
-          opens .env files, so the value is never in this page.
+          opens .env files, and anything in the code that looks like a key is shown as [hidden].
         </div>
       )}
       <div className="hint">

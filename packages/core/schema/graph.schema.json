@@ -136,7 +136,8 @@
             "properties": {
               "path": { "type": "string" },
               "line": { "type": "integer", "minimum": 1 },
-              "role": { "enum": ["import", "use"] }
+              "role": { "enum": ["import", "use"] },
+              "code": { "type": "string", "maxLength": 160 }
             }
           }
         }

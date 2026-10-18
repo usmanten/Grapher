@@ -93,6 +93,24 @@ describe('grapher graph', () => {
     expect(page).toContain('"protectedFiles":[".env"]');
   });
 
+  it('refuses to save anything when the output would contain a secret', async () => {
+    // A file named like a key ends up in the graph as a path, which the final check catches.
+    const keyName = ['sk', 'live', 'FAKEnameForCliTest', 'k3y'].join('_');
+    await writeFile(path.join(dir, `${keyName}.ts`), 'export const x = 1;');
+    await writeFile(path.join(dir, 'use.ts'), `import { x } from './${keyName}';\nx;`);
+
+    const graph = await run('graph', dir);
+    const json = await run('graph', dir, '--json');
+
+    expect(graph.code).toBe(1);
+    expect(graph.err).toContain('Stopped before saving');
+    expect(graph.err).not.toContain(keyName);
+    await expect(readFile(path.join(dir, '.grapher/graph.json'))).rejects.toThrow();
+    await expect(readFile(path.join(dir, '.grapher/index.html'))).rejects.toThrow();
+    expect(json.code).toBe(1);
+    expect(json.out).toBe('');
+  });
+
   it('prints the graph with --json and saves nothing', async () => {
     const { code, out } = await run('graph', dir, '--json');
 

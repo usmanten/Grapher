@@ -2,7 +2,14 @@ import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 
-import { analyzeProject, OUTPUT_DIR, scanProject, writeGraph, writeViewer } from '@grapher/core';
+import {
+  analyzeProject,
+  assertNoSecrets,
+  OUTPUT_DIR,
+  scanProject,
+  writeGraph,
+  writeViewer,
+} from '@grapher/core';
 
 import { formatGraphSummary, formatScanSummary } from './format.js';
 import { loadViewerTemplate, viewerPage } from './viewer.js';
@@ -72,12 +79,14 @@ export async function main(argv: readonly string[], io: Io): Promise<number> {
     }
     const { graph, scan } = await analyzeProject(folder);
     if (values.json) {
+      assertNoSecrets(graph);
       io.out(JSON.stringify(graph, null, 2));
       return 0;
     }
-    const template = await loadViewerTemplate();
+    // Both outputs are built and checked for secrets before either is written.
+    const html = viewerPage(await loadViewerTemplate(), graph, scan);
     await writeGraph(scan.root, graph);
-    const page = await writeViewer(scan.root, viewerPage(template, graph, scan));
+    const page = await writeViewer(scan.root, html);
     io.out(
       `${formatGraphSummary(graph)}\n\nSaved ${OUTPUT_DIR}/graph.json and ${OUTPUT_DIR}/index.html\nOpen it in your browser: ${pathToFileURL(page).href}`,
     );

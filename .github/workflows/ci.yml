@@ -40,6 +40,8 @@ jobs:
         run: pnpm grapher scan .
       - name: Smoke test the graph on the sample app
         run: pnpm grapher graph examples/sample-app
+      - name: Check that a project full of fake secrets produces clean output
+        run: pnpm test:secrets
 
   viewer:
     name: Viewer smoke test

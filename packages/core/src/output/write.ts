@@ -3,6 +3,7 @@ import { lstat, mkdir, open } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { Graph } from '../graph/types.js';
+import { assertNoSecrets } from '../safety/check.js';
 
 export const OUTPUT_DIR = '.grapher';
 
@@ -39,12 +40,14 @@ async function outputDir(root: string): Promise<string> {
 
 /**
  * Saves the graph to `<root>/.grapher/graph.json` and returns its path.
+ * Refuses to save anything if the graph contains something secret-looking.
  *
  * Refuses to write through symlinks, so a crafted project can't redirect
  * Grapher's output to overwrite a file elsewhere. The folder gets its own
  * .gitignore so output isn't committed by accident.
  */
 export async function writeGraph(root: string, graph: Graph): Promise<string> {
+  assertNoSecrets(graph);
   const file = path.join(await outputDir(root), 'graph.json');
   await writeNoFollow(file, `${JSON.stringify(graph, null, 2)}\n`);
   return file;
