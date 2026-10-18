@@ -1,0 +1,35 @@
+name: Bug report
+description: Something in Grapher is broken or wrong.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. **Never paste secrets, API keys or `.env` contents into an issue.**
+        If you found a way Grapher could leak a secret, report it privately instead (see SECURITY.md).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `grapher scan` in a project with ...
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Grapher version
+      placeholder: grapher --version
+  - type: input
+    id: environment
+    attributes:
+      label: Node version and operating system
+      placeholder: Node 22.12, macOS 15
