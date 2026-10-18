@@ -12,7 +12,10 @@ export function detectPackages(imports: readonly PackageImport[], builder: Graph
   for (const imp of imports) {
     const known = KNOWN_PACKAGES.get(imp.packageName);
     if (!known) {
-      if (!isOrdinaryPackage(imp.packageName)) builder.addUnknownPackage(imp.packageName);
+      // Config files import build tools like eslint or vitest, not parts of the app.
+      if (imp.file.role !== 'config' && !isOrdinaryPackage(imp.packageName)) {
+        builder.addUnknownPackage(imp.packageName);
+      }
       continue;
     }
 

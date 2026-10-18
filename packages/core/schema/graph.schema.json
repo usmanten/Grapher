@@ -117,6 +117,7 @@
             "displays",
             "uses",
             "requests",
+            "links",
             "reads",
             "writes",
             "connects",

@@ -125,6 +125,8 @@ export function describeConnection(index: Index, connection: Connection): string
   switch (connection.kind) {
     case 'displays':
       return `${a} displays the ${b} component on screen.`;
+    case 'links':
+      return `${a} sends the user to the ${b} page${to.kind === 'file' && to.urlPath ? ` (${to.urlPath})` : ''}, with a link or a redirect.`;
     case 'requests':
       return `${a} sends a request to the API route in ${b}${to.kind === 'file' && to.urlPath ? ` (${to.urlPath})` : ''}. This is where the browser talks to your server.`;
     case 'reads':

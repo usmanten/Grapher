@@ -62,6 +62,7 @@ export type ConnectionKind =
   | 'displays'
   | 'uses'
   | 'requests'
+  | 'links'
   | 'reads'
   | 'writes'
   | 'connects'

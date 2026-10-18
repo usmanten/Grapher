@@ -10,7 +10,7 @@ import {
 import { joinAnd, listNames } from './labels.js';
 
 /** Database operations, as beginners would describe them. */
-export type DbOperation = 'reads' | 'saves' | 'deletes';
+export type DbOperation = 'reads' | 'saves' | 'deletes' | 'runs';
 
 export interface ConnectionInput {
   from: string;
@@ -36,11 +36,12 @@ interface Draft {
 }
 
 const MAX_LOCATIONS = 5;
-const OPERATION_ORDER: DbOperation[] = ['reads', 'saves', 'deletes'];
+const OPERATION_ORDER: DbOperation[] = ['reads', 'saves', 'deletes', 'runs'];
 const PREPOSITION: Record<DbOperation, string> = {
   reads: 'reads from',
   saves: 'saves to',
   deletes: 'deletes from',
+  runs: 'runs',
 };
 
 const byString = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
@@ -136,6 +137,7 @@ export class GraphBuilder {
       'reads',
       'requests',
       'displays',
+      'links',
       'connects',
       'uses-service',
       'reads-setting',
@@ -148,6 +150,8 @@ export class GraphBuilder {
     switch (kind) {
       case 'displays':
         return 'displays';
+      case 'links':
+        return 'sends the user to';
       case 'uses': {
         const names = [...draft.names].sort(byString);
         return names.length > 0 ? `uses ${listNames(names)}` : 'imports but never uses';
@@ -163,7 +167,11 @@ export class GraphBuilder {
         const operations = OPERATION_ORDER.filter((op) => draft.operations.has(op));
         const verb =
           operations.length === 1 ? PREPOSITION[operations[0] ?? 'reads'] : joinAnd(operations);
-        return details.length > 0 ? `${verb} ${listNames(details, 3)}` : verb;
+        // Tables first, then database functions like `get_leaderboard()`.
+        const names = [...details].sort(
+          (a, b) => Number(a.endsWith('()')) - Number(b.endsWith('()')) || byString(a, b),
+        );
+        return names.length > 0 ? `${verb} ${listNames(names, 3)}` : verb;
       }
       case 'connects':
         return 'connects to';

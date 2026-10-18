@@ -316,7 +316,8 @@ function isSelectChain(node: Node): boolean {
 
 /**
  * Supabase: when the project depends on a Supabase package, finds client
- * creation, and calls like `supabase.from('profiles').select()`.
+ * creation, calls like `supabase.from('profiles').select()`, and database
+ * functions run with `supabase.rpc('name')`.
  */
 export function detectSupabase(ctx: AnalysisContext, builder: GraphBuilder): void {
   if (![...SUPABASE_PACKAGES].some((p) => ctx.dependencies.has(p))) return;
@@ -345,7 +346,7 @@ export function detectSupabase(ctx: AnalysisContext, builder: GraphBuilder): voi
         });
         continue;
       }
-      const table = supabaseTable(call);
+      const table = supabaseTable(call) ?? supabaseFunction(call);
       if (table) connectTable(builder, file, engine, call, table.name, table.operation);
     }
   }
@@ -364,4 +365,20 @@ function supabaseTable(call: CallExpression): { name: string; operation: DbOpera
   }
   const name = stringValue(fromCall.getArguments()[0]);
   return name === undefined ? undefined : { name, operation };
+}
+
+/**
+ * Matches `<client>.rpc('function_name', ...)`. The function lives in the
+ * database, so the code can't show whether it reads or changes data; the
+ * `()` tells it apart from a table name in labels.
+ */
+function supabaseFunction(
+  call: CallExpression,
+): { name: string; operation: DbOperation } | undefined {
+  const callee = call.getExpression();
+  if (!callee.isKind(SyntaxKind.PropertyAccessExpression) || callee.getName() !== 'rpc') {
+    return undefined;
+  }
+  const name = stringValue(call.getArguments()[0]);
+  return name === undefined ? undefined : { name: `${name}()`, operation: 'runs' };
 }

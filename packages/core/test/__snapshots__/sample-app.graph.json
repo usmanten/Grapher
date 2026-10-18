@@ -260,6 +260,21 @@
       ]
     },
     {
+      "id": "file:app/api/checkout/route.ts->file:app/dashboard/page.tsx",
+      "from": "file:app/api/checkout/route.ts",
+      "to": "file:app/dashboard/page.tsx",
+      "kind": "links",
+      "label": "sends the user to",
+      "locations": [
+        {
+          "path": "app/api/checkout/route.ts",
+          "line": 9,
+          "role": "use",
+          "code": "success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`,"
+        }
+      ]
+    },
+    {
       "id": "file:app/api/checkout/route.ts->file:lib/stripe.ts",
       "from": "file:app/api/checkout/route.ts",
       "to": "file:lib/stripe.ts",
@@ -581,6 +596,36 @@
       ],
       "details": [
         "POST"
+      ]
+    },
+    {
+      "id": "file:components/Nav.tsx->file:app/dashboard/page.tsx",
+      "from": "file:components/Nav.tsx",
+      "to": "file:app/dashboard/page.tsx",
+      "kind": "links",
+      "label": "sends the user to",
+      "locations": [
+        {
+          "path": "components/Nav.tsx",
+          "line": 7,
+          "role": "use",
+          "code": "<Link href=\"/dashboard\">Dashboard</Link>"
+        }
+      ]
+    },
+    {
+      "id": "file:components/Nav.tsx->file:app/page.tsx",
+      "from": "file:components/Nav.tsx",
+      "to": "file:app/page.tsx",
+      "kind": "links",
+      "label": "sends the user to",
+      "locations": [
+        {
+          "path": "components/Nav.tsx",
+          "line": 6,
+          "role": "use",
+          "code": "<Link href=\"/\">Home</Link>"
+        }
       ]
     },
     {

@@ -8,6 +8,11 @@ export function isCodeFile(path: string): boolean {
   return CODE_FILE.test(path) && !path.endsWith('.d.ts');
 }
 
+/** Test files check the app but are not part of it, so they stay off the map. */
+export function isTestFile(path: string): boolean {
+  return /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(path) || /(?:^|\/)__tests__\//.test(path);
+}
+
 export function isInAppDir(path: string): boolean {
   return APP_DIR.test(path);
 }
