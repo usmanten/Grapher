@@ -28,6 +28,15 @@ async function writeNoFollow(target: string, contents: string): Promise<void> {
   }
 }
 
+/** Creates `.grapher/` with its own .gitignore, refusing a symlinked folder. */
+async function outputDir(root: string): Promise<string> {
+  const dir = path.join(root, OUTPUT_DIR);
+  if (await isSymlink(dir)) throw new Error(`Refusing to write: ${OUTPUT_DIR} is a symlink`);
+  await mkdir(dir, { recursive: true });
+  await writeNoFollow(path.join(dir, '.gitignore'), '*\n');
+  return dir;
+}
+
 /**
  * Saves the graph to `<root>/.grapher/graph.json` and returns its path.
  *
@@ -36,11 +45,14 @@ async function writeNoFollow(target: string, contents: string): Promise<void> {
  * .gitignore so output isn't committed by accident.
  */
 export async function writeGraph(root: string, graph: Graph): Promise<string> {
-  const dir = path.join(root, OUTPUT_DIR);
-  if (await isSymlink(dir)) throw new Error(`Refusing to write: ${OUTPUT_DIR} is a symlink`);
-  await mkdir(dir, { recursive: true });
-  await writeNoFollow(path.join(dir, '.gitignore'), '*\n');
-  const file = path.join(dir, 'graph.json');
+  const file = path.join(await outputDir(root), 'graph.json');
   await writeNoFollow(file, `${JSON.stringify(graph, null, 2)}\n`);
+  return file;
+}
+
+/** Saves the viewer page to `<root>/.grapher/index.html` and returns its path. */
+export async function writeViewer(root: string, html: string): Promise<string> {
+  const file = path.join(await outputDir(root), 'index.html');
+  await writeNoFollow(file, html);
   return file;
 }

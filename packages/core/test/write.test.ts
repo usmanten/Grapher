@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { analyzeProject, writeGraph } from '../src/index.js';
+import { analyzeProject, writeGraph, writeViewer } from '../src/index.js';
 import { makeProject } from './helpers.js';
 
 const cleanups: (() => Promise<void>)[] = [];
@@ -46,5 +46,31 @@ describe('writeGraph', () => {
 
     await expect(writeGraph(scan.root, graph)).rejects.toThrow();
     expect(await readFile(path.join(outside.dir, 'target.json'), 'utf8')).toBe('original');
+  });
+});
+
+describe('writeViewer', () => {
+  it('saves index.html next to graph.json', async () => {
+    const created = await makeProject({ 'app/page.tsx': '' });
+    cleanups.push(created.cleanup);
+
+    const file = await writeViewer(created.dir, '<p>page</p>');
+
+    expect(file).toBe(path.join(created.dir, '.grapher/index.html'));
+    expect(await readFile(file, 'utf8')).toBe('<p>page</p>');
+  });
+
+  it('refuses to write through a symlinked index.html', async () => {
+    const outside = await makeProject({ 'target.html': 'original' });
+    const created = await makeProject({ 'app/page.tsx': '' });
+    cleanups.push(outside.cleanup, created.cleanup);
+    await mkdir(path.join(created.dir, '.grapher'));
+    await symlink(
+      path.join(outside.dir, 'target.html'),
+      path.join(created.dir, '.grapher/index.html'),
+    );
+
+    await expect(writeViewer(created.dir, '<p>new</p>')).rejects.toThrow();
+    expect(await readFile(path.join(outside.dir, 'target.html'), 'utf8')).toBe('original');
   });
 });
