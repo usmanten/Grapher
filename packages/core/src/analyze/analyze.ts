@@ -8,6 +8,7 @@ import type { ScanOptions, ScanResult } from '../scan/types.js';
 import { GraphBuilder } from './builder.js';
 import { detectDrizzle, detectPrisma, detectSupabase } from './detectors/databases.js';
 import { detectImports } from './detectors/imports.js';
+import { detectNavigation } from './detectors/navigation.js';
 import { detectPackages } from './detectors/packages.js';
 import { detectRequests, type RouteTarget } from './detectors/requests.js';
 import { connectSetting, detectSettings } from './detectors/settings.js';
@@ -39,8 +40,12 @@ function routeMethods(ctx: AnalysisContext, filePath: string): HttpMethod[] {
   return HTTP_METHODS.filter((m) => exported.has(m));
 }
 
-function addFileNodes(ctx: AnalysisContext, builder: GraphBuilder): RouteTarget[] {
+function addFileNodes(
+  ctx: AnalysisContext,
+  builder: GraphBuilder,
+): { routes: RouteTarget[]; pages: RouteTarget[] } {
   const routes: RouteTarget[] = [];
+  const pages: RouteTarget[] = [];
   for (const file of ctx.files.values()) {
     const node: FileNode = { id: file.nodeId, kind: 'file', path: file.path, role: file.role };
     if (file.role === 'page' || file.role === 'route') node.urlPath = urlPathFor(file.path);
@@ -48,10 +53,11 @@ function addFileNodes(ctx: AnalysisContext, builder: GraphBuilder): RouteTarget[
       node.methods = routeMethods(ctx, file.path);
       routes.push({ nodeId: file.nodeId, urlPath: node.urlPath ?? '/' });
     }
+    if (file.role === 'page') pages.push({ nodeId: file.nodeId, urlPath: node.urlPath ?? '/' });
     if (file.client) node.client = true;
     builder.addNode(node);
   }
-  return routes;
+  return { routes, pages };
 }
 
 function frameworkWarnings(
@@ -103,10 +109,11 @@ export async function analyzeProject(
   const ctx = await loadProject(scan, reader);
   const builder = new GraphBuilder();
 
-  const routes = addFileNodes(ctx, builder);
+  const { routes, pages } = addFileNodes(ctx, builder);
   const framework = frameworkWarnings(ctx, builder);
   const packageImports = detectImports(ctx, builder);
   detectRequests(ctx, builder, routes);
+  detectNavigation(ctx, builder, pages);
   detectPackages(packageImports, builder);
   detectSettings(ctx, builder);
   await detectPrisma(ctx, builder, (from, name, filePath, line) => {

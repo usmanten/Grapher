@@ -171,6 +171,70 @@ describe('packages', () => {
     expect(graph.nodes.find((n) => n.id === 'database:redis')).toMatchObject({ inferred: true });
     expect(graph.unknownPackages).toEqual(['left-pad-pro']);
   });
+
+  it('leaves out build tools that only config files import, and test files', async () => {
+    const graph = await graphOf({
+      'vitest.config.ts':
+        "import { defineConfig } from 'vitest/config';\nexport default defineConfig({});",
+      'lib/ship.ts': "import { Shippo } from 'shippo';\nexport const s = new Shippo({});",
+      'lib/ship.test.ts':
+        "import { s } from './ship';\nimport { it } from 'vitest';\nit('x', () => s);",
+      'lib/__tests__/more.ts': "import { s } from '../ship';\ns;",
+    });
+    expect(graph.unknownPackages).toEqual([]);
+    expect(connection(graph, 'file:lib/ship.ts', 'service:shippo')?.label).toBe('uses Shippo');
+    const paths = graph.nodes.flatMap((n) => (n.kind === 'file' ? [n.path] : []));
+    expect(paths).toEqual(['lib/ship.ts', 'vitest.config.ts']);
+  });
+});
+
+describe('navigation', () => {
+  it('connects links, redirects and checkout return addresses to the pages they open', async () => {
+    const graph = await graphOf({
+      'app/page.tsx': 'export default function Home() { return null; }',
+      'app/about/page.tsx': 'export default function About() { return null; }',
+      'app/shop/[slug]/page.tsx': 'export default function Item() { return null; }',
+      'app/checkout/done/page.tsx': 'export default function Done() { return null; }',
+      'app/api/buy/route.ts': [
+        'export async function POST() {',
+        '  const base = process.env.BASE;',
+        '  return { success_url: `${base}/checkout/done?order=1`, cancelUrl: "https://elsewhere.example/x" };',
+        '}',
+      ].join('\n'),
+      'components/nav.tsx': [
+        "import Link from 'next/link';",
+        "const items = [{ name: 'About', href: '/about' }];",
+        'export function Nav({ slug }: { slug: string }) {',
+        '  return <><Link href="/">Home</Link><Link href={`/shop/${slug}`}>Item</Link>{items.length}<a href="/api/buy">Buy</a></>;',
+        '}',
+      ].join('\n'),
+      'app/actions.ts': [
+        "'use server';",
+        "import { redirect } from 'next/navigation';",
+        "export async function go() { redirect('/about'); }",
+      ].join('\n'),
+      'components/back.tsx': [
+        "'use client';",
+        "import { useRouter } from 'next/navigation';",
+        "export function Back() { const router = useRouter(); return <button onClick={() => router.push('/')} />; }",
+      ].join('\n'),
+      'app/sitemap.ts': "export default function sitemap() { return [{ url: '/about' }]; }",
+    });
+    const links = graph.connections
+      .filter((c) => c.kind === 'links')
+      .map((c) => `${c.from} -> ${c.to}`);
+    expect(links).toEqual([
+      'file:app/actions.ts -> file:app/about/page.tsx',
+      'file:app/api/buy/route.ts -> file:app/checkout/done/page.tsx',
+      'file:components/back.tsx -> file:app/page.tsx',
+      'file:components/nav.tsx -> file:app/about/page.tsx',
+      'file:components/nav.tsx -> file:app/page.tsx',
+      'file:components/nav.tsx -> file:app/shop/[slug]/page.tsx',
+    ]);
+    expect(connection(graph, 'file:components/back.tsx', 'file:app/page.tsx')?.label).toBe(
+      'sends the user to',
+    );
+  });
 });
 
 describe('settings', () => {
@@ -247,6 +311,33 @@ describe('databases', () => {
     );
     expect(connection(graph, 'file:app/page.tsx', 'database:supabase')?.label).toBe(
       'reads and saves profiles',
+    );
+  });
+
+  it('detects Supabase database functions and lists them after tables', async () => {
+    const graph = await graphOf({
+      'package.json': JSON.stringify({ dependencies: { '@supabase/supabase-js': '2.0.0' } }),
+      'lib/db.ts':
+        "import { createClient } from '@supabase/supabase-js';\nexport const db = createClient('', '');",
+      'app/api/top/route.ts': [
+        "import { db } from '@/lib/db';",
+        'export async function GET() {',
+        "  await db.rpc('get_top', { n: 3 });",
+        '}',
+      ].join('\n'),
+      'app/api/hook/route.ts': [
+        "import { db } from '@/lib/db';",
+        'export async function POST() {',
+        "  await db.rpc('bump');",
+        "  await db.from('orders').insert({});",
+        '}',
+      ].join('\n'),
+    });
+    expect(connection(graph, 'file:app/api/top/route.ts', 'database:supabase')?.label).toBe(
+      'runs get_top()',
+    );
+    expect(connection(graph, 'file:app/api/hook/route.ts', 'database:supabase')?.label).toBe(
+      'saves and runs orders and bump()',
     );
   });
 

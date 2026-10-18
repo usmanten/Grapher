@@ -3,7 +3,7 @@ import { Project, type SourceFile, ts } from 'ts-morph';
 import type { FileRole } from '../graph/types.js';
 import { ReadRefusedError, type SourceReader } from '../scan/reader.js';
 import type { ScanResult } from '../scan/types.js';
-import { fileRole, isCodeFile } from './next.js';
+import { fileRole, isCodeFile, isTestFile } from './next.js';
 
 export interface AnalyzedFile {
   path: string;
@@ -132,7 +132,7 @@ export async function loadProject(
   const files = new Map<string, AnalyzedFile>();
   const byVirtualPath = new Map<string, AnalyzedFile>();
   for (const { path } of scan.files) {
-    if (!isCodeFile(path)) continue;
+    if (!isCodeFile(path) || isTestFile(path)) continue;
     let text: string;
     try {
       text = await reader.read(path);
