@@ -11,7 +11,7 @@ Modern tools make it easy to generate a lot of code quickly. Understanding how a
 
 It is built for students and anyone still learning how real projects are structured.
 
-> **Status:** early development. Scanning, connection detection, the interactive viewer and Claude Code explanations work today. The graph, viewer and explanations are being built. See the [roadmap](#roadmap).
+> **Status:** v0.1.0, the first release. Grapher maps Next.js App Router projects (with or without a `src/` folder) written in TypeScript or JavaScript. It has been tried on a real store built with Stripe, Supabase, Shippo and Resend. See [what it supports](#what-it-supports) and the [roadmap](#roadmap).
 
 ![Grapher's file view, showing the users API route, what calls it, and what it uses](docs/images/viewer-file-view.png)
 
@@ -24,7 +24,7 @@ It is built for students and anyone still learning how real projects are structu
 
 ## Quick start
 
-Grapher is not published to npm yet. To try the scanner from source:
+You need [Node.js](https://nodejs.org) 22 or newer and [Claude Code](https://claude.com/claude-code). Grapher is not on npm yet, so install it from source:
 
 ```sh
 git clone https://github.com/usmanten/grapher.git
@@ -32,10 +32,40 @@ cd grapher
 corepack enable
 pnpm install
 pnpm build
-pnpm grapher scan /path/to/your/nextjs-app
+pnpm grapher setup
 ```
 
-Example output:
+`setup` installs the `/grapher` command for Claude Code. Then open Claude Code in your Next.js project and type:
+
+```text
+/grapher
+```
+
+When it finishes, open `.grapher/index.html` in your browser. Pick a file on the left to see what uses it and what it uses, click a line to read what it does, and use **Trace full flow** to follow everything that leads to and from that file. The page works offline and loads nothing from the internet.
+
+![An explanation in Grapher: the signup form sends a POST request to the users API route](docs/images/viewer-explanation.png)
+
+### What `/grapher` does
+
+1. Grapher maps the project on your machine. No code leaves it at this step.
+2. If the project uses packages Grapher doesn't recognize, Claude is shown their names only and says what each one is, so an outside service like a shipping API still shows up on the map. Answers are saved in `.grapher/packages.json`.
+3. Claude reads each connection Grapher found, with only the one scrubbed line of code behind it, never your files or `.env`. It writes two or three plain-English sentences for each, saved in `.grapher/explanations.json`.
+
+Running `/grapher` again only asks about what changed, so repeat runs are quick.
+
+### Without Claude Code
+
+Grapher works on its own too. You get the full map, without the explanations:
+
+```sh
+pnpm grapher graph /path/to/your/nextjs-app
+```
+
+To see which files Grapher would read and which it skips, including secret files it will never open:
+
+```sh
+pnpm grapher scan /path/to/your/nextjs-app
+```
 
 ```text
 Scanned /home/you/my-app
@@ -46,27 +76,22 @@ Scanned /home/you/my-app
     3 dependency and build folders: .next, node_modules, out
 ```
 
-Add `--json` for machine-readable output.
+Add `--json` to either command for machine-readable output. Try it on the included sample app with `pnpm grapher graph examples/sample-app`.
 
-To map how the project connects:
+## What it supports
 
-```sh
-pnpm grapher graph /path/to/your/nextjs-app
-```
+| It finds                   | For example                                                                                                                      |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Pages, layouts, API routes | `app/page.tsx`, `app/api/users/route.ts` and the HTTP methods each route handles                                                 |
+| Components a page displays | `<SignupForm />` in a page                                                                                                       |
+| Links between pages        | `<Link href="/about">`, `router.push`, `redirect()`, a Stripe checkout's `success_url`                                           |
+| Calls to your API routes   | `fetch('/api/users', { method: 'POST' })`, axios, ky                                                                             |
+| Server actions             | Files marked `'use server'`                                                                                                      |
+| Databases and their tables | Prisma, Drizzle and Supabase (which tables are read, saved or deleted), plus Postgres, MongoDB, Redis and others by package      |
+| Outside services           | Stripe, Resend, Shippo, OpenAI and more than 30 others by package, outside web APIs by host, and anything else Claude identifies |
+| Settings                   | `process.env.STRIPE_SECRET_KEY`, by name only                                                                                    |
 
-This saves `.grapher/graph.json` and `.grapher/index.html` in your project. Open `index.html` in your browser to explore it: pick a file on the left, click a line to see what it does, and follow **Trace full flow** to see everything that leads to and from that file. The page works offline and loads nothing from the internet.
-
-Try it on the included sample app with `pnpm grapher graph examples/sample-app`.
-
-### Explanations with Claude Code
-
-To get a short plain-English explanation for every connection, install the `/grapher` command once:
-
-```sh
-pnpm grapher setup
-```
-
-Then open [Claude Code](https://claude.com/claude-code) in your Next.js project and type `/grapher`. Claude first identifies any packages Grapher doesn't recognize, from their names only, so outside services like a shipping API still show up. Then it reads the connections Grapher found (scrubbed code lines only, never your files or `.env`), writes two or three sentences for each, and Grapher adds them to `.grapher/index.html`. Explanations are saved, so running `/grapher` again only explains connections whose code changed.
+Not yet supported: the Pages Router (`pages/`, Grapher shows a warning), and languages other than TypeScript and JavaScript.
 
 ## How it works
 
@@ -106,9 +131,10 @@ See [SECURITY.md](SECURITY.md) and the [threat model](docs/threat-model.md) for 
 - [x] Interactive viewer with file view, full-flow tracing and an overview
 - [x] `/grapher` command for Claude Code with cached explanations
 - [x] Snippet scrubbing and a final output safety check
-- [ ] v0.1.0 release
+- [x] Tried on a real project, with page links, Supabase functions and AI-identified packages added from what it found
+- [x] v0.1.0 release
 
-Later: a "what changed since the last commit" view, Pages Router support, Python projects, and watch mode.
+Next: publishing to npm, marking files nothing uses, Pages Router support, Python projects, a "what changed since the last commit" view, and watch mode.
 
 ## Contributing
 

@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-18
+
+The first release.
+
 ### Changed
 
 - Test files are left off the map, and build tools imported only by config files (like `eslint` or `vitest`) are no longer listed as unidentified packages.
@@ -32,3 +36,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Shippo and EasyPost in the list of known services.
 - Packages Grapher doesn't recognize show on the map as gray "not yet identified" boxes. `/grapher` asks Claude what each one is, by name only, and outside services and databases it finds are added to the map marked "identified by AI". Answers are saved in `.grapher/packages.json`.
 - CI with linting, type checks, tests with coverage, CodeQL, dependency review, a dependency audit and secret scanning.
+
+[Unreleased]: https://github.com/usmanten/grapher/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/usmanten/grapher/releases/tag/v0.1.0
