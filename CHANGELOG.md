@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Files nothing in your code uses are shown faded in gray, with an "unused" tag in the file list and a note in the file view. Pages, routes, layouts, config files, scripts and tests are never marked, because Next.js or a tool starts them by name.
 
+### Fixed
+
+- Grapher no longer refuses to save the map when the project's folder path mixes capitals and digits, like `/home/you/code/2024/FinalProject-Web`. The folder is now checked one folder name at a time, so a folder named like a key is still caught.
+
 ## [0.1.0] - 2026-10-18
 
 The first release.
