@@ -4,6 +4,9 @@ import type { ScanResult } from '../scan/types.js';
 import type { GraphBuilder } from './builder.js';
 import type { IdentifiedPackages } from './known-packages.js';
 
+/** The id of a file's node on the map. Every pack uses the same ids, so packs can link to each other's files. */
+export const fileNodeId = (path: string) => `file:${path}`;
+
 /**
  * A language pack teaches Grapher one language and its frameworks. Every
  * pack answers the same three questions:

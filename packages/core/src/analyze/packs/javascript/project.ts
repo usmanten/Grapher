@@ -3,6 +3,7 @@ import { Project, type SourceFile, ts } from 'ts-morph';
 import type { FileRole } from '../../../graph/types.js';
 import { ReadRefusedError, type SourceReader } from '../../../scan/reader.js';
 import type { ScanResult } from '../../../scan/types.js';
+import { fileNodeId } from '../../pack.js';
 import { fileRole, isTestFile } from './next.js';
 
 export interface AnalyzedFile {
@@ -29,8 +30,6 @@ export interface AnalysisContext {
 /** Virtual root for the in-memory file system: `/app/page.tsx`, `/lib/db.ts`, ... */
 const toVirtual = (path: string) => `/${path}`;
 const fromVirtual = (path: string) => path.replace(/^\//, '');
-
-export const fileNodeId = (path: string) => `file:${path}`;
 
 async function readOptional(reader: SourceReader, scan: ScanResult, path: string) {
   if (!scan.files.some((f) => f.path === path)) return undefined;
