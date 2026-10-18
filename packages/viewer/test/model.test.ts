@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import type { Connection, Graph } from '@grapher/core';
+import type { Connection, FileNode, Graph } from '@grapher/core';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -11,9 +11,11 @@ import {
   editorLink,
   fileTree,
   indexGraph,
+  isEntryPoint,
   kindGroup,
   layoutFor,
   rankColumns,
+  unusedFiles,
   usedByCopy,
 } from '../src/model.js';
 
@@ -207,6 +209,93 @@ describe('editorLink', () => {
   it('handles Windows folders', () => {
     expect(editorLink('C:\\Users\\you\\app', 'page.tsx', 2)).toBe(
       'vscode://file/C:/Users/you/app/page.tsx:2',
+    );
+  });
+});
+
+describe('unused files', () => {
+  const file = (path: string, role: FileNode['role'] = 'component'): FileNode => ({
+    id: `file:${path}`,
+    kind: 'file',
+    path,
+    role,
+  });
+
+  it('finds nothing unused in the sample app', () => {
+    expect([...unusedFiles(graph)]).toEqual([]);
+  });
+
+  it('marks a file that nothing uses, but not one that something uses', () => {
+    const nodes = [
+      file('app/page.tsx', 'page'),
+      file('components/Nav.tsx'),
+      file('components/OldBanner.tsx'),
+      file('lib/helpers.ts', 'module'),
+    ];
+    const unused = unusedFiles({
+      ...graph,
+      nodes,
+      connections: [
+        conn('file:app/page.tsx', 'file:components/Nav.tsx'),
+        // A file that only uses itself is still unused.
+        conn('file:lib/helpers.ts', 'file:lib/helpers.ts'),
+      ],
+    });
+    expect([...unused].sort()).toEqual(['file:components/OldBanner.tsx', 'file:lib/helpers.ts']);
+  });
+
+  it('only counts files, never databases, services or settings', () => {
+    const unused = unusedFiles({
+      ...graph,
+      nodes: [{ id: 'setting:API_KEY', kind: 'setting', name: 'API_KEY', public: false }],
+      connections: [],
+    });
+    expect(unused.size).toBe(0);
+  });
+
+  it('never grays out files that are started from outside the code', () => {
+    const entries = [
+      file('app/page.tsx', 'page'),
+      file('app/layout.tsx', 'layout'),
+      file('app/api/users/route.ts', 'route'),
+      file('middleware.ts', 'middleware'),
+      file('next.config.ts', 'config'),
+      file('app/loading.tsx'),
+      file('src/app/blog/[slug]/not-found.tsx'),
+      file('app/global-error.tsx'),
+      file('app/sitemap.ts', 'module'),
+      file('app/opengraph-image.tsx'),
+      file('index.ts', 'module'),
+      file('src/main.ts', 'module'),
+      file('packages/cli/src/index.ts', 'module'),
+      file('scripts/backfill.ts', 'module'),
+      file('prisma/seed.ts', 'module'),
+      file('tests/helpers.ts', 'module'),
+      file('components/Button.stories.tsx'),
+    ];
+    for (const entry of entries) expect(isEntryPoint(entry), entry.path).toBe(true);
+    expect(unusedFiles({ ...graph, nodes: entries, connections: [] }).size).toBe(0);
+  });
+
+  it('still grays out look-alikes that nothing starts', () => {
+    const lookAlikes = [
+      file('components/ui/index.ts', 'module'),
+      file('components/loading.tsx'),
+      file('lib/server.ts', 'module'),
+      file('app/actions.ts', 'server-actions'),
+    ];
+    for (const node of lookAlikes) expect(isEntryPoint(node), node.path).toBe(false);
+  });
+
+  it('says so in the file view', () => {
+    const lonely = indexGraph({
+      ...graph,
+      nodes: [file('components/OldBanner.tsx')],
+      connections: [],
+    });
+    expect(lonely.unused.has('file:components/OldBanner.tsx')).toBe(true);
+    expect(layoutFor(lonely, 'file', 'file:components/OldBanner.tsx').subtitle).toBe(
+      'Component. Nothing in your code uses this file.',
     );
   });
 });

@@ -1,4 +1,4 @@
-import type { Connection, Graph, GraphNode } from '@grapher/core';
+import type { Connection, FileNode, Graph, GraphNode } from '@grapher/core';
 
 /** The three ways to look at a project. */
 export type View = 'file' | 'flow' | 'overview';
@@ -37,6 +37,8 @@ export interface Index {
   graph: Graph;
   nodes: Map<string, GraphNode>;
   connections: Map<string, Connection>;
+  /** Files nothing else in the code uses. See `unusedFiles`. */
+  unused: Set<string>;
 }
 
 export function indexGraph(graph: Graph): Index {
@@ -44,7 +46,57 @@ export function indexGraph(graph: Graph): Index {
     graph,
     nodes: new Map(graph.nodes.map((n) => [n.id, n])),
     connections: new Map(graph.connections.map((c) => [c.id, c])),
+    unused: unusedFiles(graph),
   };
+}
+
+/** Files Next.js or a tool loads by name, so nothing in the code needs to import them. */
+const ENTRY_ROLES: ReadonlySet<FileNode['role']> = new Set([
+  'page',
+  'layout',
+  'route',
+  'middleware',
+  'config',
+]);
+
+// Special files Next.js picks up from the app folder, like loading.tsx or sitemap.ts.
+const NEXT_SPECIAL_FILE =
+  /^(?:src\/)?app\/(?:.*\/)?(?:loading|error|global-error|not-found|forbidden|unauthorized|default|template|opengraph-image|twitter-image|icon|apple-icon|sitemap|robots|manifest)\.[^/]+$/;
+// Files run directly: a program's starting file, scripts, seeds, tests and stories.
+const RUN_DIRECTLY = [
+  /^(?:index|main|cli|server)\.[^/]+$/,
+  /(?:^|\/)(?:src|bin)\/(?:index|main|cli|server)\.[^/]+$/,
+  /(?:^|\/)(?:scripts|bin|e2e|tests?|__tests__|__mocks__)\//,
+  /(?:^|\/)seed\.[^/]+$/,
+  /\.(?:test|spec|stories)\.[^/]+$/,
+];
+
+/**
+ * True for files that are meant to be started from outside the code, so it's
+ * normal that nothing imports them: pages, routes, layouts, config, scripts and
+ * tests.
+ */
+export function isEntryPoint(node: FileNode): boolean {
+  return (
+    ENTRY_ROLES.has(node.role) ||
+    NEXT_SPECIAL_FILE.test(node.path) ||
+    RUN_DIRECTLY.some((pattern) => pattern.test(node.path))
+  );
+}
+
+/**
+ * Files nothing else uses: no other file imports, displays, requests or links
+ * to them, and they aren't an entry point. Code loaded in ways Grapher can't
+ * see (like a path built at runtime) can still show up here, so the viewer
+ * calls these "unused", not "safe to delete".
+ */
+export function unusedFiles(graph: Graph): Set<string> {
+  const used = new Set(graph.connections.filter((c) => c.from !== c.to).map((c) => c.to));
+  return new Set(
+    graph.nodes
+      .filter((n): n is FileNode => n.kind === 'file' && !isEntryPoint(n) && !used.has(n.id))
+      .map((n) => n.id),
+  );
 }
 
 export function baseName(path: string): string {
@@ -234,7 +286,9 @@ export function layoutFor(index: Index, view: View, focus: string | undefined): 
       }
       return {
         title: nodeName(node),
-        subtitle: describeNode(node),
+        subtitle: index.unused.has(id)
+          ? `${describeNode(node)}. Nothing in your code uses this file.`
+          : describeNode(node),
         columns,
         connections: [...incoming, ...outgoing],
         labels: true,

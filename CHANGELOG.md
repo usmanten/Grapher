@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Files nothing in your code uses are shown faded in gray, with an "unused" tag in the file list and a note in the file view. Pages, routes, layouts, config files, scripts and tests are never marked, because Next.js or a tool starts them by name.
+
 ## [0.1.0] - 2026-10-18
 
 The first release.
