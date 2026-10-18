@@ -13,6 +13,8 @@ const SECRET_FILE_PATTERNS: readonly RegExp[] = [
   /^\.env$/, // .env
   /^\.env\./, // .env.local, .env.production, ...
   /^\.dev\.vars$/, // Cloudflare Workers local secrets
+  /^\.envrc$/, // direnv
+  /^\.vault-token$/, // HashiCorp Vault
   /\.(pem|key|p8|p12|pfx|jks|keystore|ppk|asc|gpg)$/, // keys and certificate bundles
   /^id_(rsa|dsa|ecdsa|ed25519)(\.|$)/, // SSH keys
   /^\.(npmrc|pypirc|netrc|git-credentials|htpasswd|pgpass)$/, // tool credential files
@@ -27,11 +29,12 @@ const SECRET_FILE_PATTERNS: readonly RegExp[] = [
 ];
 
 /** Folders that only ever hold credentials. */
-const SECRET_DIRECTORIES = new Set(['.ssh', '.aws', '.gnupg', '.azure', '.kube']);
+const SECRET_DIRECTORIES = new Set(['.ssh', '.aws', '.gnupg', '.azure', '.kube', '.docker']);
 
 function baseName(posixPath: string): string {
   const name = posixPath.split('/').pop() ?? posixPath;
-  return name.toLowerCase();
+  // Windows ignores trailing dots and spaces, so ".env " can open ".env".
+  return name.replace(/[. ]+$/, '').toLowerCase();
 }
 
 /** True if a file with this path must never be opened. */

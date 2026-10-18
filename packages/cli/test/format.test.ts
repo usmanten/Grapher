@@ -24,4 +24,16 @@ describe('formatScanSummary', () => {
     );
     expect(text).toContain('Stopped early');
   });
+
+  it('replaces terminal control characters in file names', () => {
+    const text = formatScanSummary({
+      root: '/p',
+      files: [],
+      skipped: [{ path: 'evil\u001b[2Jname.env', reason: 'secret-file' }],
+      truncated: false,
+    });
+
+    expect(text).not.toContain('\u001b');
+    expect(text).toContain('evil?[2Jname.env');
+  });
 });

@@ -10,6 +10,10 @@ describe('isSecretFile', () => {
     'apps/web/.env.development.local',
     '.ENV',
     '.dev.vars',
+    '.env ',
+    '.env.',
+    '.envrc',
+    '.vault-token',
     'certs/server.pem',
     'private.key',
     'AuthKey_ABC123.p8',
@@ -52,7 +56,7 @@ describe('isSecretFile', () => {
 });
 
 describe('isSecretDirectory', () => {
-  it.each(['.ssh', '.aws', 'home/.gnupg'])('blocks %s', (dir) => {
+  it.each(['.ssh', '.aws', '.docker', 'home/.gnupg'])('blocks %s', (dir) => {
     expect(isSecretDirectory(dir)).toBe(true);
   });
 
