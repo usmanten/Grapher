@@ -18,7 +18,8 @@
     "test:coverage": "vitest run --coverage",
     "grapher": "node packages/cli/dist/index.js",
     "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo coverage packages/viewer/test-results",
-    "test:e2e": "pnpm --filter @grapher/viewer test:e2e"
+    "test:e2e": "pnpm --filter @grapher/viewer test:e2e",
+    "test:secrets": "node scripts/check-secrets-fixture.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
