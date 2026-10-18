@@ -15,16 +15,16 @@ flowchart LR
   G --> H[Viewer index.html]
 ```
 
-| Stage        | Status | What it does                                                                                         |
-| ------------ | ------ | ---------------------------------------------------------------------------------------------------- |
-| Scan         | Done   | Lists the files that may be analyzed, skipping secrets, dependencies, build output and ignored files |
-| Read safely  | Done   | The only way to read file contents. Re-checks every rule at read time                                |
-| Parse        | Done   | Uses ts-morph to resolve imports, including path aliases like `@/lib/db`                             |
-| Detect       | Done   | Finds pages, API routes, fetch calls, server actions, database code, outside services and settings   |
-| Graph        | Done   | Writes a versioned `graph.json` with nodes, connections and file:line locations                      |
-| Explain      | Done   | The `/grapher` command in Claude Code writes short explanations from scrubbed snippets               |
-| Safety check | Done   | Scans everything Grapher writes for secret-like values and refuses to save if any are found          |
-| Viewer       | Done   | A single self-contained HTML page built with React and React Flow                                    |
+| Stage        | Status | What it does                                                                                             |
+| ------------ | ------ | -------------------------------------------------------------------------------------------------------- |
+| Scan         | Done   | Lists the files that may be analyzed, skipping secrets, dependencies, build output and ignored files     |
+| Read safely  | Done   | The only way to read file contents. Re-checks every rule at read time                                    |
+| Parse        | Done   | Each language pack reads its own files: ts-morph for JavaScript and TypeScript, Tree-sitter for the rest |
+| Detect       | Done   | Finds pages, API routes, fetch calls, server actions, database code, outside services and settings       |
+| Graph        | Done   | Writes a versioned `graph.json` with nodes, connections and file:line locations                          |
+| Explain      | Done   | The `/grapher` command in Claude Code writes short explanations from scrubbed snippets                   |
+| Safety check | Done   | Scans everything Grapher writes for secret-like values and refuses to save if any are found              |
+| Viewer       | Done   | A single self-contained HTML page built with React and React Flow                                        |
 
 ## Packages
 
@@ -51,9 +51,21 @@ A symlink can point anywhere, including outside the project or at a secret file 
 
 ## Analysis (`packages/core/src/analyze`)
 
+Code is read by **language packs** (see [ADR 0010](decisions/0010-language-packs.md)). `pack.ts` defines the shape every pack fills in: which files are mine, which file uses which, and what the special parts are (routes, databases, services, settings). `analyze.ts` hands each scanned file to the first pack in `DEFAULT_PACKS` that claims it, then runs every pack's steps into one shared `GraphBuilder`.
+
+**JavaScript and TypeScript (`packs/javascript`)**
+
 - **`project.ts`** loads every approved code file through the safe reader into a ts-morph project that lives only in memory (see [ADR 0006](decisions/0006-in-memory-parsing.md)). Path aliases come from `tsconfig.json` or `jsconfig.json`; `extends` is not followed.
 - **`next.ts`** knows the App Router conventions: which files are pages, layouts and routes, and which URL a route answers (route groups like `(marketing)` and `@slots` are dropped).
 - **`detectors/`** each look for one kind of connection: `imports`, `requests` (fetch, axios, ky), `navigation` (links, redirects and return addresses that open one of the app's pages), `settings` (`process.env`), `packages` (known services and databases), and `databases` (Prisma, Drizzle, Supabase tables and whether code reads, saves or deletes, plus Supabase database functions).
+
+**Other languages (`packs/basic`)**
+
+- Parses Python, Java, Go, Rust, C and C++, Ruby and PHP with Tree-sitter (`@vscode/tree-sitter-wasm`, loaded from local files) and maps which file uses which. `languages.ts` says how each language writes an import; `resolve.ts` turns an import into project files, preferring source folders (like `src/main/java/`) that contain the importing file. Go imports use the module path from `go.mod`.
+- It finds no routes, databases, services or settings. A full pack for a language, listed before it, takes over that language's files.
+
+**Shared**
+
 - **`builder.ts`** merges everything found between the same two nodes into one connection with one plain-word label, like "reads and saves users", keeping up to five code locations. Output is sorted so the same project always produces the same file.
 
 The output writer (`packages/core/src/output`) saves `.grapher/graph.json`, adds a `.gitignore` inside `.grapher/` so the folder is never committed, and refuses to write through a symlink.
