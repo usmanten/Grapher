@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- Test files are left off the map, and build tools imported only by config files (like `eslint` or `vitest`) are no longer listed as unidentified packages.
+
 ### Added
 
 - Project scanner that lists the files Grapher may analyze and reports what it skips and why.
@@ -23,4 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - A CI job that runs Grapher on a generated project full of fake secrets and fails if any of them reach the output.
 - A JSON Schema for `graph.json` and a sample Next.js app used for integration and snapshot tests.
 - A warning when a project uses the Pages Router, which is not fully supported yet.
+- Links between pages: `<Link href>`, menu items with `href`, `router.push`, `redirect()`, and return addresses handed to services, like a Stripe checkout's `success_url`.
+- Supabase database functions called with `.rpc()`.
+- Shippo and EasyPost in the list of known services.
 - CI with linting, type checks, tests with coverage, CodeQL, dependency review, a dependency audit and secret scanning.

@@ -102,7 +102,7 @@ See [SECURITY.md](SECURITY.md) and the [threat model](docs/threat-model.md) for 
 ## Roadmap
 
 - [x] Project scanner with secret-file protection
-- [x] Connection detection: imports, pages, API routes, fetch calls, server actions, Prisma, Drizzle, Supabase, outside services, settings
+- [x] Connection detection: imports, pages, links between pages, API routes, fetch calls, server actions, Prisma, Drizzle, Supabase, outside services, settings
 - [x] Interactive viewer with file view, full-flow tracing and an overview
 - [x] `/grapher` command for Claude Code with cached explanations
 - [x] Snippet scrubbing and a final output safety check
