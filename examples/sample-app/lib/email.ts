@@ -1,0 +1,12 @@
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export async function sendWelcomeEmail(to: string) {
+  await resend.emails.send({
+    from: 'hello@example.com',
+    to,
+    subject: 'Welcome!',
+    html: '<p>Thanks for signing up.</p>',
+  });
+}
