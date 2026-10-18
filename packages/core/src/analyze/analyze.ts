@@ -13,6 +13,7 @@ import { detectRequests, type RouteTarget } from './detectors/requests.js';
 import { connectSetting, detectSettings } from './detectors/settings.js';
 import { isInAppDir, isPagesRouterFile, urlPathFor } from './next.js';
 import { type AnalysisContext, loadProject } from './project.js';
+import { addSnippets } from './snippets.js';
 import { type HttpMethod } from '../graph/types.js';
 
 const HTTP_METHODS: readonly HttpMethod[] = [
@@ -115,5 +116,7 @@ export async function analyzeProject(
   detectSupabase(ctx, builder);
 
   const name = ctx.projectName || path.basename(scan.root);
-  return { graph: builder.build({ name, framework }), scan };
+  const graph = builder.build({ name, framework });
+  addSnippets(graph, ctx.files);
+  return { graph, scan };
 }

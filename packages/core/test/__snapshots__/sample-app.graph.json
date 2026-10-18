@@ -194,7 +194,8 @@
         {
           "path": "app/(marketing)/about/page.tsx",
           "line": 2,
-          "role": "use"
+          "role": "use",
+          "code": "return <p>About {process.env.NEXT_PUBLIC_SITE_URL}</p>;"
         }
       ]
     },
@@ -208,7 +209,8 @@
         {
           "path": "app/actions.ts",
           "line": 7,
-          "role": "use"
+          "role": "use",
+          "code": "await db.post.create({"
         }
       ],
       "details": [
@@ -225,12 +227,14 @@
         {
           "path": "app/actions.ts",
           "line": 3,
-          "role": "import"
+          "role": "import",
+          "code": "import { db } from '@/lib/db';"
         },
         {
           "path": "app/actions.ts",
           "line": 7,
-          "role": "use"
+          "role": "use",
+          "code": "await db.post.create({"
         }
       ]
     },
@@ -244,12 +248,14 @@
         {
           "path": "app/actions.ts",
           "line": 4,
-          "role": "import"
+          "role": "import",
+          "code": "import { formatTitle } from '@/lib/validation';"
         },
         {
           "path": "app/actions.ts",
           "line": 8,
-          "role": "use"
+          "role": "use",
+          "code": "data: { title: formatTitle(String(form.get('title'))), authorId: String(form.get('authorId')) },"
         }
       ]
     },
@@ -263,12 +269,14 @@
         {
           "path": "app/api/checkout/route.ts",
           "line": 3,
-          "role": "import"
+          "role": "import",
+          "code": "import { stripe } from '@/lib/stripe';"
         },
         {
           "path": "app/api/checkout/route.ts",
           "line": 6,
-          "role": "use"
+          "role": "use",
+          "code": "const session = await stripe.checkout.sessions.create({"
         }
       ]
     },
@@ -282,7 +290,8 @@
         {
           "path": "app/api/checkout/route.ts",
           "line": 9,
-          "role": "use"
+          "role": "use",
+          "code": "success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`,"
         }
       ]
     },
@@ -296,7 +305,8 @@
         {
           "path": "app/api/users/[id]/route.ts",
           "line": 5,
-          "role": "use"
+          "role": "use",
+          "code": "await db.user.delete({ where: { id } });"
         }
       ],
       "details": [
@@ -313,12 +323,14 @@
         {
           "path": "app/api/users/[id]/route.ts",
           "line": 1,
-          "role": "import"
+          "role": "import",
+          "code": "import { db } from '@/lib/db';"
         },
         {
           "path": "app/api/users/[id]/route.ts",
           "line": 5,
-          "role": "use"
+          "role": "use",
+          "code": "await db.user.delete({ where: { id } });"
         }
       ]
     },
@@ -332,12 +344,14 @@
         {
           "path": "app/api/users/route.ts",
           "line": 8,
-          "role": "use"
+          "role": "use",
+          "code": "const users = await db.user.findMany({ select: { id: true, email: true } });"
         },
         {
           "path": "app/api/users/route.ts",
           "line": 14,
-          "role": "use"
+          "role": "use",
+          "code": "const user = await db.user.create({ data: { email, passwordHash: await hash(password) } });"
         }
       ],
       "details": [
@@ -354,12 +368,14 @@
         {
           "path": "app/api/users/route.ts",
           "line": 3,
-          "role": "import"
+          "role": "import",
+          "code": "import { db } from '@/lib/db';"
         },
         {
           "path": "app/api/users/route.ts",
           "line": 8,
-          "role": "use"
+          "role": "use",
+          "code": "const users = await db.user.findMany({ select: { id: true, email: true } });"
         }
       ]
     },
@@ -373,12 +389,14 @@
         {
           "path": "app/api/users/route.ts",
           "line": 4,
-          "role": "import"
+          "role": "import",
+          "code": "import { sendWelcomeEmail } from '@/lib/email';"
         },
         {
           "path": "app/api/users/route.ts",
           "line": 15,
-          "role": "use"
+          "role": "use",
+          "code": "await sendWelcomeEmail(user.email);"
         }
       ]
     },
@@ -392,12 +410,14 @@
         {
           "path": "app/api/users/route.ts",
           "line": 5,
-          "role": "import"
+          "role": "import",
+          "code": "import { signupSchema } from '@/lib/validation';"
         },
         {
           "path": "app/api/users/route.ts",
           "line": 13,
-          "role": "use"
+          "role": "use",
+          "code": "const { email, password } = signupSchema.parse(await request.json());"
         }
       ]
     },
@@ -411,7 +431,8 @@
         {
           "path": "app/dashboard/page.tsx",
           "line": 6,
-          "role": "use"
+          "role": "use",
+          "code": "const users = await db.user.findMany();"
         }
       ],
       "details": [
@@ -428,12 +449,14 @@
         {
           "path": "app/dashboard/page.tsx",
           "line": 1,
-          "role": "import"
+          "role": "import",
+          "code": "import { UserCard } from '@/components/UserCard';"
         },
         {
           "path": "app/dashboard/page.tsx",
           "line": 10,
-          "role": "use"
+          "role": "use",
+          "code": "<UserCard key={user.id} id={user.id} email={user.email} />"
         }
       ]
     },
@@ -447,12 +470,14 @@
         {
           "path": "app/dashboard/page.tsx",
           "line": 2,
-          "role": "import"
+          "role": "import",
+          "code": "import { db } from '@/lib/db';"
         },
         {
           "path": "app/dashboard/page.tsx",
           "line": 6,
-          "role": "use"
+          "role": "use",
+          "code": "const users = await db.user.findMany();"
         }
       ]
     },
@@ -466,12 +491,14 @@
         {
           "path": "app/layout.tsx",
           "line": 1,
-          "role": "import"
+          "role": "import",
+          "code": "import { Nav } from '@/components/Nav';"
         },
         {
           "path": "app/layout.tsx",
           "line": 7,
-          "role": "use"
+          "role": "use",
+          "code": "<Nav />"
         }
       ]
     },
@@ -485,12 +512,14 @@
         {
           "path": "app/page.tsx",
           "line": 1,
-          "role": "import"
+          "role": "import",
+          "code": "import CheckoutButton from '@/components/CheckoutButton';"
         },
         {
           "path": "app/page.tsx",
           "line": 7,
-          "role": "use"
+          "role": "use",
+          "code": "<CheckoutButton />"
         }
       ]
     },
@@ -504,12 +533,14 @@
         {
           "path": "app/posts/new/page.tsx",
           "line": 1,
-          "role": "import"
+          "role": "import",
+          "code": "import { createPost } from '../../actions';"
         },
         {
           "path": "app/posts/new/page.tsx",
           "line": 5,
-          "role": "use"
+          "role": "use",
+          "code": "<form action={createPost}>"
         }
       ]
     },
@@ -523,12 +554,14 @@
         {
           "path": "app/signup/page.tsx",
           "line": 1,
-          "role": "import"
+          "role": "import",
+          "code": "import { SignupForm } from '@/components/SignupForm';"
         },
         {
           "path": "app/signup/page.tsx",
           "line": 4,
-          "role": "use"
+          "role": "use",
+          "code": "return <SignupForm />;"
         }
       ]
     },
@@ -542,7 +575,8 @@
         {
           "path": "components/CheckoutButton.tsx",
           "line": 5,
-          "role": "use"
+          "role": "use",
+          "code": "const res = await fetch('/api/checkout', { method: 'POST' });"
         }
       ],
       "details": [
@@ -559,7 +593,8 @@
         {
           "path": "components/SignupForm.tsx",
           "line": 9,
-          "role": "use"
+          "role": "use",
+          "code": "const res = await fetch('/api/users', {"
         }
       ],
       "details": [
@@ -576,7 +611,8 @@
         {
           "path": "components/UserCard.tsx",
           "line": 5,
-          "role": "use"
+          "role": "use",
+          "code": "await fetch(`/api/users/${id}`, { method: 'DELETE' });"
         }
       ],
       "details": [
@@ -593,7 +629,8 @@
         {
           "path": "lib/db.ts",
           "line": 6,
-          "role": "use"
+          "role": "use",
+          "code": "export const db = globalForPrisma.prisma ?? new PrismaClient();"
         }
       ]
     },
@@ -607,12 +644,14 @@
         {
           "path": "lib/email.ts",
           "line": 1,
-          "role": "import"
+          "role": "import",
+          "code": "import { Resend } from 'resend';"
         },
         {
           "path": "lib/email.ts",
           "line": 3,
-          "role": "use"
+          "role": "use",
+          "code": "const resend = new Resend(process.env.RESEND_API_KEY);"
         }
       ]
     },
@@ -626,7 +665,8 @@
         {
           "path": "lib/email.ts",
           "line": 3,
-          "role": "use"
+          "role": "use",
+          "code": "const resend = new Resend(process.env.RESEND_API_KEY);"
         }
       ]
     },
@@ -640,12 +680,14 @@
         {
           "path": "lib/stripe.ts",
           "line": 1,
-          "role": "import"
+          "role": "import",
+          "code": "import Stripe from 'stripe';"
         },
         {
           "path": "lib/stripe.ts",
           "line": 3,
-          "role": "use"
+          "role": "use",
+          "code": "export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '');"
         }
       ]
     },
@@ -659,7 +701,8 @@
         {
           "path": "lib/stripe.ts",
           "line": 3,
-          "role": "use"
+          "role": "use",
+          "code": "export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '');"
         }
       ]
     },

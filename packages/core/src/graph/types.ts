@@ -74,6 +74,8 @@ export interface Location {
   line: number;
   /** What happens on this line. */
   role: 'import' | 'use';
+  /** The line of code itself, trimmed and with anything secret-looking replaced by `[hidden]`. */
+  code?: string;
 }
 
 export interface Connection {
