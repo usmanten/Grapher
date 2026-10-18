@@ -5,14 +5,17 @@ import { parseArgs } from 'node:util';
 import {
   analyzeProject,
   assertNoSecrets,
+  currentExplanations,
+  loadCache,
   OUTPUT_DIR,
   scanProject,
-  writeGraph,
-  writeViewer,
 } from '@grapher/core';
 
+import { explainRequest, explainSave, writeOutputs } from './explain.js';
 import { formatGraphSummary, formatScanSummary } from './format.js';
-import { loadViewerTemplate, viewerPage } from './viewer.js';
+import { setup } from './setup.js';
+
+const COMMANDS = new Set(['graph', 'scan', 'explain', 'setup']);
 
 export interface Io {
   out(text: string): void;
@@ -22,9 +25,15 @@ export interface Io {
 const HELP = `Usage: grapher <command> [options]
 
 Commands:
+  setup           Install the /grapher command for Claude Code
   graph [folder]  Map how the project connects and save it to .grapher/
                   (open .grapher/index.html in your browser to explore it)
   scan [folder]   List the files Grapher would analyze, and what it skips
+  explain [folder]
+                  Used by /grapher in Claude Code: prints the connections that
+                  still need a plain-English explanation
+  explain [folder] --save
+                  Saves the explanations Claude wrote to .grapher/answers.json
 
 Options:
   --json          Print machine-readable output instead (nothing is saved)
@@ -47,6 +56,7 @@ export async function main(argv: readonly string[], io: Io): Promise<number> {
       allowPositionals: true,
       options: {
         json: { type: 'boolean', default: false },
+        save: { type: 'boolean', default: false },
         help: { type: 'boolean', short: 'h', default: false },
         version: { type: 'boolean', short: 'v', default: false },
       },
@@ -66,7 +76,7 @@ export async function main(argv: readonly string[], io: Io): Promise<number> {
     io.out(HELP);
     return 0;
   }
-  if ((command !== 'scan' && command !== 'graph') || extra.length > 0) {
+  if (!COMMANDS.has(command) || extra.length > 0 || (values.save && command !== 'explain')) {
     io.err(`Unknown command: ${positionals.join(' ')}\n\n${HELP}`);
     return 2;
   }
@@ -77,16 +87,25 @@ export async function main(argv: readonly string[], io: Io): Promise<number> {
       io.out(values.json ? JSON.stringify(result, null, 2) : formatScanSummary(result));
       return 0;
     }
+    if (command === 'setup') {
+      const file = await setup();
+      io.out(
+        `Installed the /grapher command at ${file}.\nOpen Claude Code in a Next.js project and type /grapher to map it.`,
+      );
+      return 0;
+    }
+    if (command === 'explain') {
+      io.out(values.save ? await explainSave(folder) : await explainRequest(folder));
+      return 0;
+    }
     const { graph, scan } = await analyzeProject(folder);
     if (values.json) {
       assertNoSecrets(graph);
       io.out(JSON.stringify(graph, null, 2));
       return 0;
     }
-    // Both outputs are built and checked for secrets before either is written.
-    const html = viewerPage(await loadViewerTemplate(), graph, scan);
-    await writeGraph(scan.root, graph);
-    const page = await writeViewer(scan.root, html);
+    const cache = await loadCache(scan.root);
+    const page = await writeOutputs(graph, scan, currentExplanations(graph, cache));
     io.out(
       `${formatGraphSummary(graph)}\n\nSaved ${OUTPUT_DIR}/graph.json and ${OUTPUT_DIR}/index.html\nOpen it in your browser: ${pathToFileURL(page).href}`,
     );

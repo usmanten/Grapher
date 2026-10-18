@@ -7,5 +7,13 @@ export {
   VIEWER_DATA_PLACEHOLDER,
   type ViewerData,
 } from './output/html.js';
-export { OUTPUT_DIR, writeGraph, writeViewer } from './output/write.js';
+export {
+  OUTPUT_DIR,
+  readOutputFile,
+  removeOutputFile,
+  writeGraph,
+  writeOutputFile,
+  writeViewer,
+} from './output/write.js';
 export * from './safety/index.js';
+export * from './explain/index.js';

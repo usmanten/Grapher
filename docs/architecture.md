@@ -15,16 +15,16 @@ flowchart LR
   G --> H[Viewer index.html]
 ```
 
-| Stage        | Status  | What it does                                                                                         |
-| ------------ | ------- | ---------------------------------------------------------------------------------------------------- |
-| Scan         | Done    | Lists the files that may be analyzed, skipping secrets, dependencies, build output and ignored files |
-| Read safely  | Done    | The only way to read file contents. Re-checks every rule at read time                                |
-| Parse        | Done    | Uses ts-morph to resolve imports, including path aliases like `@/lib/db`                             |
-| Detect       | Done    | Finds pages, API routes, fetch calls, server actions, database code, outside services and settings   |
-| Graph        | Done    | Writes a versioned `graph.json` with nodes, connections and file:line locations                      |
-| Explain      | Planned | The `/grapher` command in Claude Code writes short explanations from scrubbed snippets               |
-| Safety check | Done    | Scans everything Grapher writes for secret-like values and refuses to save if any are found          |
-| Viewer       | Done    | A single self-contained HTML page built with React and React Flow                                    |
+| Stage        | Status | What it does                                                                                         |
+| ------------ | ------ | ---------------------------------------------------------------------------------------------------- |
+| Scan         | Done   | Lists the files that may be analyzed, skipping secrets, dependencies, build output and ignored files |
+| Read safely  | Done   | The only way to read file contents. Re-checks every rule at read time                                |
+| Parse        | Done   | Uses ts-morph to resolve imports, including path aliases like `@/lib/db`                             |
+| Detect       | Done   | Finds pages, API routes, fetch calls, server actions, database code, outside services and settings   |
+| Graph        | Done   | Writes a versioned `graph.json` with nodes, connections and file:line locations                      |
+| Explain      | Done   | The `/grapher` command in Claude Code writes short explanations from scrubbed snippets               |
+| Safety check | Done   | Scans everything Grapher writes for secret-like values and refuses to save if any are found          |
+| Viewer       | Done   | A single self-contained HTML page built with React and React Flow                                    |
 
 ## Packages
 
@@ -65,6 +65,17 @@ The output writer (`packages/core/src/output`) saves `.grapher/graph.json`, adds
 - **`analyze/snippets.ts`** adds one scrubbed line of code to each connection location, cut to 160 characters.
 
 `writeGraph` and `renderViewer` both call `assertNoSecrets`, and the CLI builds and checks both outputs before writing either, so a failed check leaves nothing half-written (see [ADR 0008](decisions/0008-scrub-and-fail-closed.md)).
+
+## Explanations (`packages/core/src/explain`, `packages/cli/src/explain.ts`)
+
+The Grapher CLI never talks to an AI service itself ([ADR 0003](decisions/0003-no-network-in-cli.md)). Instead, the `/grapher` command runs inside the user's own Claude Code session, and the two exchange files ([ADR 0009](decisions/0009-explanations-through-claude-code.md)):
+
+1. `grapher explain` maps the project, writes the page, and prints an **explain request**: up to 40 connections that have no up-to-date explanation, each with its two ends, its label and its scrubbed code lines. The request is checked for secrets before it is printed, and the data sits between marker lines containing a random value.
+2. Claude writes `{ "<connection id>": "<explanation>" }` to `.grapher/answers.json`.
+3. `grapher explain --save` keeps answers only for connections that were asked about, cleans them to plain text of at most 600 characters, refuses the whole answer if anything looks like a secret, and stores them in `.grapher/explanations.json`.
+4. Each explanation is saved with a **fingerprint** of its connection (kind, label, tables and code lines, not line numbers). When the code changes, the fingerprint changes and the connection is explained again; otherwise the saved text is reused, so repeat runs cost almost nothing.
+
+`grapher setup` installs the command file at `~/.claude/commands/grapher.md`, filled in with the path to this CLI. It only ever replaces a file it wrote itself.
 
 ## The viewer (`packages/viewer`)
 

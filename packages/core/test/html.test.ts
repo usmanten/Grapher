@@ -18,6 +18,7 @@ const data = (name: string): ViewerData => ({
   },
   root: '/home/you/app',
   protectedFiles: ['.env'],
+  explanations: {},
 });
 
 const TEMPLATE = '<script type="application/json" id="d">"__GRAPHER_DATA__"</script><p>after</p>';
@@ -38,9 +39,9 @@ describe('scriptSafeJson', () => {
   });
 
   it('escapes line and paragraph separators', () => {
-    const json = scriptSafeJson('a b c');
+    const json = scriptSafeJson('a\u2028b\u2029c');
     expect(json).toBe('"a\\u2028b\\u2029c"');
-    expect(JSON.parse(json)).toBe('a b c');
+    expect(JSON.parse(json)).toBe('a\u2028b\u2029c');
   });
 });
 

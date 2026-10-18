@@ -8,6 +8,8 @@ export interface ViewerData {
   root: string;
   /** Secret files Grapher skipped, by path only, so the viewer can show they were never read. */
   protectedFiles: string[];
+  /** Plain-English explanations written by Claude, keyed by connection id. */
+  explanations: Record<string, string>;
 }
 
 export const VIEWER_DATA_PLACEHOLDER = '"__GRAPHER_DATA__"';
@@ -22,8 +24,8 @@ export function scriptSafeJson(value: unknown): string {
     .replaceAll('<', '\\u003c')
     .replaceAll('>', '\\u003e')
     .replaceAll('&', '\\u0026')
-    .replaceAll(' ', '\\u2028')
-    .replaceAll(' ', '\\u2029');
+    .replaceAll('\u2028', '\\u2028')
+    .replaceAll('\u2029', '\\u2029');
 }
 
 /** Fills the viewer template with the project's data. */

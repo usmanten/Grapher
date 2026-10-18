@@ -11,7 +11,7 @@ Modern tools make it easy to generate a lot of code quickly. Understanding how a
 
 It is built for students and anyone still learning how real projects are structured.
 
-> **Status:** early development. Scanning, connection detection and the interactive viewer work today. The graph, viewer and explanations are being built. See the [roadmap](#roadmap).
+> **Status:** early development. Scanning, connection detection, the interactive viewer and Claude Code explanations work today. The graph, viewer and explanations are being built. See the [roadmap](#roadmap).
 
 ![Grapher's file view, showing the users API route, what calls it, and what it uses](docs/images/viewer-file-view.png)
 
@@ -58,6 +58,16 @@ This saves `.grapher/graph.json` and `.grapher/index.html` in your project. Open
 
 Try it on the included sample app with `pnpm grapher graph examples/sample-app`.
 
+### Explanations with Claude Code
+
+To get a short plain-English explanation for every connection, install the `/grapher` command once:
+
+```sh
+pnpm grapher setup
+```
+
+Then open [Claude Code](https://claude.com/claude-code) in your Next.js project and type `/grapher`. Claude reads the connections Grapher found (scrubbed code lines only, never your files or `.env`), writes two or three sentences for each, and Grapher adds them to `.grapher/index.html`. Explanations are saved, so running `/grapher` again only explains connections whose code changed.
+
 ## How it works
 
 ```mermaid
@@ -94,7 +104,7 @@ See [SECURITY.md](SECURITY.md) and the [threat model](docs/threat-model.md) for 
 - [x] Project scanner with secret-file protection
 - [x] Connection detection: imports, pages, API routes, fetch calls, server actions, Prisma, Drizzle, Supabase, outside services, settings
 - [x] Interactive viewer with file view, full-flow tracing and an overview
-- [ ] `/grapher` command for Claude Code with cached explanations
+- [x] `/grapher` command for Claude Code with cached explanations
 - [x] Snippet scrubbing and a final output safety check
 - [ ] v0.1.0 release
 

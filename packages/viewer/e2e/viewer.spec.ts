@@ -49,6 +49,7 @@ test('explores the sample app without errors or blocked content', async ({ page:
   );
   await expect(panel).toContainText('(/api/users)');
   await expect(panel.locator('pre').first()).toContainText("fetch('/api/users'");
+  await expect(panel).toContainText('Run /grapher in Claude Code');
   const link = panel.getByRole('link', { name: /^components\/SignupForm\.tsx:\d+$/ });
   await expect(link).toHaveAttribute(
     'href',
