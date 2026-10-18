@@ -53,13 +53,15 @@ try {
     await writeFile(path.join(dir, name), contents);
   }
 
-  execFileSync(process.execPath, [path.join(repo, 'packages/cli/dist/index.js'), 'graph', dir], {
-    stdio: 'inherit',
-  });
+  const cli = path.join(repo, 'packages/cli/dist/index.js');
+  execFileSync(process.execPath, [cli, 'graph', dir], { stdio: 'inherit' });
+  // The text /grapher hands to Claude for explanations must be clean too.
+  const request = execFileSync(process.execPath, [cli, 'explain', dir], { encoding: 'utf8' });
 
   const outputs = {
     'graph.json': await readFile(path.join(dir, '.grapher/graph.json'), 'utf8'),
     'index.html': await readFile(path.join(dir, '.grapher/index.html'), 'utf8'),
+    'explain request': request,
   };
   const leaks = [];
   for (const [file, text] of Object.entries(outputs)) {
@@ -71,6 +73,8 @@ try {
   // result means something.
   const hidden = (outputs['graph.json'].match(/\[hidden\]/g) ?? []).length;
   if (hidden < 4) leaks.push(`expected scrubbed snippets in graph.json, found ${hidden}`);
+  if (!request.includes('[hidden]'))
+    leaks.push('expected scrubbed snippets in the explain request');
 
   if (leaks.length > 0) {
     console.error(`\nSecrets fixture FAILED:\n  ${leaks.join('\n  ')}`);
