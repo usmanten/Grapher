@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `grapher graph [folder]` maps a Next.js App Router project and saves `.grapher/graph.json` (`--json` prints it instead).
 - Connection detection without AI: imports (including `@/` path aliases), pages and the components they display, API routes and their methods, `fetch`/axios/ky calls matched to the route they hit, server actions, Prisma, Drizzle and Supabase tables with read/save/delete, known outside services and databases, and settings from `process.env` (names only).
 - Interactive viewer saved to `.grapher/index.html`: a file tree, a file view showing what uses a file and what it uses, Trace full flow, an Overview, and an explanation panel with "open in VS Code" links. Works offline, follows the system's light or dark theme, and lists protected secret files by name only.
+- `/grapher` command for Claude Code, installed with `grapher setup`. Claude writes a two or three sentence explanation for each connection, shown in the viewer. Explanations are saved and only rewritten when the code behind a connection changes.
+- `grapher explain` and `grapher explain --save`, the steps `/grapher` runs.
 - Each connection now carries the line of code behind it, shown in the viewer. Anything key-shaped in it is replaced with `[hidden]`.
 - A final safety check: if anything Grapher is about to save looks like a secret, it saves nothing and says where the problem is without repeating the value.
 - A CI job that runs Grapher on a generated project full of fake secrets and fails if any of them reach the output.
