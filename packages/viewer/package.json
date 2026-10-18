@@ -1,6 +1,6 @@
 {
   "name": "@grapher/viewer",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "The interactive page Grapher writes to .grapher/index.html.",
   "license": "MIT",
