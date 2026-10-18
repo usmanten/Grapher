@@ -24,7 +24,7 @@ flowchart LR
 | Graph        | Done    | Writes a versioned `graph.json` with nodes, connections and file:line locations                      |
 | Explain      | Planned | The `/grapher` command in Claude Code writes short explanations from scrubbed snippets               |
 | Safety check | Planned | Scans everything Grapher writes for secret-like values and refuses to save if any are found          |
-| Viewer       | Planned | A single self-contained HTML page built with React and React Flow                                    |
+| Viewer       | Done    | A single self-contained HTML page built with React and React Flow                                    |
 
 ## Packages
 
@@ -32,6 +32,7 @@ flowchart LR
 packages/
   core/   scanning, analysis and safety checks; everything that touches user files
   cli/    the `grapher` command, a thin layer over core
+  viewer/ the page written to .grapher/index.html (React + React Flow, one self-contained file)
 ```
 
 `core` has no knowledge of the terminal, and `cli` has no knowledge of file rules. This keeps the security-sensitive code in one place, where it is easiest to test and review.
@@ -56,6 +57,17 @@ A symlink can point anywhere, including outside the project or at a secret file 
 - **`builder.ts`** merges everything found between the same two nodes into one connection with one plain-word label, like "reads and saves users", keeping up to five code locations. Output is sorted so the same project always produces the same file.
 
 The output writer (`packages/core/src/output`) saves `.grapher/graph.json`, adds a `.gitignore` inside `.grapher/` so the folder is never committed, and refuses to write through a symlink.
+
+## The viewer (`packages/viewer`)
+
+The viewer is a React app built with Vite into a single HTML file, `dist/template.html`, with all of its code and styles inlined. When `grapher graph` runs, the CLI fills that template with the project's data and saves it as `.grapher/index.html` (see [ADR 0007](decisions/0007-single-file-viewer.md)).
+
+- **`model.ts`** holds the pure logic: which nodes and lines each view shows, how columns are ranked so lines flow left to right, the file tree, plain-English descriptions, and "open in VS Code" links. It is unit tested without a browser.
+- **`data.ts`** reads the embedded data and drops anything malformed, since it came from the user's project.
+- **`components/`** are the three panes: the file tree, the React Flow canvas, and the explanation panel.
+- **`scripts/finalize.js`** runs after the build. It computes a hash of the inlined script and stylesheet and writes the page's Content Security Policy, so the browser runs that exact code and nothing else.
+
+The data goes in a `<script type="application/json">` element. Browsers never run it, and `renderViewer` in core escapes `<`, `>` and `&` so a file name like `</script>` can't break out of it. React escapes every string it shows, and the viewer never sets raw HTML.
 
 ## Data model
 

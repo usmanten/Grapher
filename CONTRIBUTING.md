@@ -24,12 +24,15 @@ pnpm build
 | `pnpm format`        | Formats the code with Prettier                        |
 | `pnpm test`          | Runs the test suite                                   |
 | `pnpm test:coverage` | Runs tests with coverage (80% minimum for core)       |
+| `pnpm test:e2e`      | Opens the viewer in a browser and clicks through it   |
 | `pnpm grapher`       | Runs the built CLI, for example `pnpm grapher scan .` |
 
 ## Project layout
 
 - `packages/core`: scanning, analysis and safety checks. Everything that touches user files lives here.
 - `packages/cli`: the `grapher` command-line interface.
+- `packages/viewer`: the interactive page Grapher writes to `.grapher/index.html` (React and React Flow, bundled into one file).
+- `examples/sample-app`: a small Next.js app used by the integration and browser tests.
 - `docs/`: the plan, architecture, threat model and decision records.
 
 See [docs/architecture.md](docs/architecture.md) for how the pieces fit together.
@@ -46,7 +49,7 @@ See [docs/architecture.md](docs/architecture.md) for how the pieces fit together
 
 1. Branch from `main` and keep the PR focused on one thing.
 2. Fill in the PR template, including exact commands to test the change.
-3. Make sure `pnpm build && pnpm typecheck && pnpm lint && pnpm test` passes locally.
+3. Make sure `pnpm build && pnpm typecheck && pnpm lint && pnpm test` passes locally. For viewer changes, also run `pnpm test:e2e` (run `pnpm --filter @grapher/viewer exec playwright install chromium` once first).
 4. Add an entry under `Unreleased` in [CHANGELOG.md](CHANGELOG.md).
 5. CI must be green before review. The maintainer reviews and merges.
 
