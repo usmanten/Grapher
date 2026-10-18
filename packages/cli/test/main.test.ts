@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -61,5 +61,35 @@ describe('grapher CLI', () => {
 
     expect(code).toBe(1);
     expect(err).toContain('Folder not found');
+  });
+});
+
+describe('grapher graph', () => {
+  it('maps the project, saves .grapher/graph.json and never prints secret values', async () => {
+    await writeFile(
+      path.join(dir, 'route.ts'),
+      "export const k = process.env.KEY;\nimport Stripe from 'stripe';\nStripe;",
+    );
+    const { code, out } = await run('graph', dir);
+
+    expect(code).toBe(0);
+    expect(out).toContain('Mapped');
+    expect(out).toContain('Outside services: Stripe');
+    expect(out).toContain('1 setting (names only, never values)');
+    expect(out).toContain('Saved .grapher/graph.json');
+    expect(out).toContain('Note: No Next.js app/ folder was found');
+    expect(out).not.toContain('not-a-real-value');
+    const saved = JSON.parse(await readFile(path.join(dir, '.grapher/graph.json'), 'utf8')) as {
+      schemaVersion: number;
+    };
+    expect(saved.schemaVersion).toBe(1);
+  });
+
+  it('prints the graph with --json and saves nothing', async () => {
+    const { code, out } = await run('graph', dir, '--json');
+
+    expect(code).toBe(0);
+    expect((JSON.parse(out) as { nodes: unknown[] }).nodes.length).toBeGreaterThan(0);
+    await expect(readFile(path.join(dir, '.grapher/graph.json'))).rejects.toThrow();
   });
 });
