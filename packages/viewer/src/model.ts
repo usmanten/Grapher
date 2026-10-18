@@ -4,7 +4,8 @@ import type { Connection, Graph, GraphNode } from '@grapher/core';
 export type View = 'file' | 'flow' | 'overview';
 
 /** Color group for a node, matching the CSS variables `--k-<group>`. */
-export type KindGroup = 'page' | 'component' | 'route' | 'lib' | 'db' | 'service' | 'setting';
+export type KindGroup =
+  'page' | 'component' | 'route' | 'lib' | 'db' | 'service' | 'package' | 'setting';
 
 export interface Column {
   heading: string;
@@ -65,7 +66,7 @@ export function kindGroup(node: GraphNode): KindGroup {
     case 'database':
       return 'db';
     case 'service':
-      return 'service';
+      return node.unidentified === true ? 'package' : 'service';
     case 'setting':
       return 'setting';
     case 'file':
@@ -79,10 +80,13 @@ export function kindGroup(node: GraphNode): KindGroup {
 /** One line describing what a node is, in plain words. */
 export function describeNode(node: GraphNode): string {
   switch (node.kind) {
-    case 'database':
-      return node.via ? `Database, used through ${node.via}` : 'Database';
+    case 'database': {
+      const base = node.via ? `Database, used through ${node.via}` : 'Database';
+      return node.identifiedBy === 'ai' ? `${base}, identified by AI` : base;
+    }
     case 'service':
-      return 'Outside service';
+      if (node.unidentified === true) return 'Package, not yet identified';
+      return node.identifiedBy === 'ai' ? 'Outside service, identified by AI' : 'Outside service';
     case 'setting':
       return node.public ? 'Setting, visible in the browser' : 'Setting, value hidden';
     case 'file':
@@ -135,7 +139,9 @@ export function describeConnection(index: Index, connection: Connection): string
     case 'connects':
       return `${a} connects to ${b}.`;
     case 'uses-service':
-      return `${a} uses ${b}, a service outside your code.`;
+      return to.kind === 'service' && to.unidentified === true
+        ? `${a} uses the ${b} package. Grapher doesn't know yet whether it talks to anything outside your app.`
+        : `${a} uses ${b}, a service outside your code.`;
     case 'reads-setting':
       return `${a} reads the ${b} setting. Grapher shows only the setting's name, never its value.`;
     case 'uses':

@@ -79,7 +79,8 @@
         "kind": { "const": "database" },
         "label": { "type": "string" },
         "via": { "type": "string" },
-        "inferred": { "type": "boolean" }
+        "inferred": { "type": "boolean" },
+        "identifiedBy": { "const": "ai" }
       }
     },
     "serviceNode": {
@@ -90,7 +91,9 @@
         "id": { "type": "string", "pattern": "^service:" },
         "kind": { "const": "service" },
         "label": { "type": "string" },
-        "source": { "type": "string" }
+        "source": { "type": "string" },
+        "identifiedBy": { "const": "ai" },
+        "unidentified": { "type": "boolean" }
       }
     },
     "settingNode": {

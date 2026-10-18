@@ -66,7 +66,7 @@ To get a short plain-English explanation for every connection, install the `/gra
 pnpm grapher setup
 ```
 
-Then open [Claude Code](https://claude.com/claude-code) in your Next.js project and type `/grapher`. Claude reads the connections Grapher found (scrubbed code lines only, never your files or `.env`), writes two or three sentences for each, and Grapher adds them to `.grapher/index.html`. Explanations are saved, so running `/grapher` again only explains connections whose code changed.
+Then open [Claude Code](https://claude.com/claude-code) in your Next.js project and type `/grapher`. Claude first identifies any packages Grapher doesn't recognize, from their names only, so outside services like a shipping API still show up. Then it reads the connections Grapher found (scrubbed code lines only, never your files or `.env`), writes two or three sentences for each, and Grapher adds them to `.grapher/index.html`. Explanations are saved, so running `/grapher` again only explains connections whose code changed.
 
 ## How it works
 

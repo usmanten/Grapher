@@ -25,7 +25,9 @@ function nodeIs(node: GraphNode): string {
     case 'database':
       return node.via ? `database, used through ${node.via}` : 'database';
     case 'service':
-      return 'outside service';
+      return node.unidentified === true
+        ? 'npm package nobody has identified yet; it may or may not talk to anything outside the app'
+        : 'outside service';
     case 'setting':
       return node.public ? 'setting visible in the browser' : 'secret setting (value never shown)';
   }

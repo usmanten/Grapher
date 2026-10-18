@@ -13,6 +13,7 @@ import { detectPackages } from './detectors/packages.js';
 import { detectRequests, type RouteTarget } from './detectors/requests.js';
 import { connectSetting, detectSettings } from './detectors/settings.js';
 import { isInAppDir, isPagesRouterFile, urlPathFor } from './next.js';
+import type { IdentifiedPackages } from './known-packages.js';
 import { type AnalysisContext, loadProject } from './project.js';
 import { addSnippets } from './snippets.js';
 import { type HttpMethod } from '../graph/types.js';
@@ -26,6 +27,11 @@ const HTTP_METHODS: readonly HttpMethod[] = [
   'HEAD',
   'OPTIONS',
 ];
+
+export interface AnalyzeOptions extends ScanOptions {
+  /** Packages Claude identified by name in an earlier run. */
+  identified?: IdentifiedPackages;
+}
 
 export interface AnalysisResult {
   graph: Graph;
@@ -101,7 +107,7 @@ function frameworkWarnings(
  */
 export async function analyzeProject(
   projectDir: string,
-  options: ScanOptions = {},
+  options: AnalyzeOptions = {},
   fs: FileSystem = nodeFileSystem,
 ): Promise<AnalysisResult> {
   const scan = await scanProject(projectDir, options, fs);
@@ -114,7 +120,7 @@ export async function analyzeProject(
   const packageImports = detectImports(ctx, builder);
   detectRequests(ctx, builder, routes);
   detectNavigation(ctx, builder, pages);
-  detectPackages(packageImports, builder);
+  detectPackages(packageImports, builder, options.identified);
   detectSettings(ctx, builder);
   await detectPrisma(ctx, builder, (from, name, filePath, line) => {
     connectSetting(builder, from, name, { path: filePath, line });

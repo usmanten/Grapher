@@ -13,6 +13,7 @@
   --k-lib: #5f6878;
   --k-db: #16855a;
   --k-service: #b26a12;
+  --k-package: #8a8f99;
   --k-setting: #c03a35;
   --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
@@ -33,6 +34,7 @@
     --k-lib: #a3abba;
     --k-db: #4cc993;
     --k-service: #e7a14b;
+    --k-package: #8c929e;
     --k-setting: #f07a73;
     color-scheme: dark;
   }
@@ -54,6 +56,9 @@
 }
 [data-kind='service'] {
   --kc: var(--k-service);
+}
+[data-kind='package'] {
+  --kc: var(--k-package);
 }
 [data-kind='setting'] {
   --kc: var(--k-setting);

@@ -12,9 +12,11 @@ import {
   fingerprint,
   GRAPH_SCHEMA_VERSION,
   type Graph,
+  identifyPrompt,
   loadCache,
   MAX_EXPLANATION_LENGTH,
   parseAnswers,
+  parseIdentified,
   saveCache,
 } from '../src/index.js';
 import { FAKE_SECRET, makeProject } from './helpers.js';
@@ -186,5 +188,34 @@ describe('explanation cache', () => {
       path.join(created.dir, '.grapher/explanations.json'),
     );
     await expect(loadCache(created.dir)).rejects.toThrow('Could not read');
+  });
+});
+
+describe('package identification', () => {
+  it('asks about valid package names only', () => {
+    const prompt = identifyPrompt(['shippo', '@scope/pkg', 'not a package', '../x'], 'save');
+    expect(prompt).toContain('GRAPHER IDENTIFY REQUEST: 2 packages');
+    expect(prompt).toContain('"@scope/pkg"');
+    expect(prompt).not.toContain('not a package');
+  });
+
+  it('cleans labels, records missing answers as unknown, and refuses secrets', () => {
+    const parsed = parseIdentified(
+      JSON.stringify({
+        shippo: { kind: 'service', label: `  Shippo\n${'x'.repeat(80)}` },
+        left: { kind: 'wizard', label: 'x' },
+      }),
+      ['shippo', 'left', 'gone'],
+    );
+    expect(parsed.get('shippo')?.label.length).toBeLessThanOrEqual(40);
+    expect(parsed.get('left')).toEqual({ kind: 'unknown', label: 'left' });
+    expect(parsed.get('gone')).toEqual({ kind: 'unknown', label: 'gone' });
+    expect(() =>
+      parseIdentified(JSON.stringify({ shippo: { kind: 'service', label: FAKE_SECRET } }), [
+        'shippo',
+      ]),
+    ).toThrow();
+    expect(() => parseIdentified('nope', ['shippo'])).toThrow('not valid JSON');
+    expect(() => parseIdentified('[]', ['shippo'])).toThrow('JSON object');
   });
 });

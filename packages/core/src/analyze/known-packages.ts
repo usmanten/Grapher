@@ -22,6 +22,18 @@ export interface KnownDatabase {
 
 export type KnownPackage = KnownService | KnownDatabase;
 
+/**
+ * What Claude said a package Grapher didn't know is, judging by its name
+ * only. `library` means an ordinary library that talks to nothing outside
+ * the app; `unknown` means Claude couldn't tell.
+ */
+export interface IdentifiedPackage {
+  kind: 'service' | 'database' | 'library' | 'unknown';
+  label: string;
+}
+
+export type IdentifiedPackages = ReadonlyMap<string, IdentifiedPackage>;
+
 const service = (label: string): KnownService => ({ kind: 'service', label });
 const database = (engine: string, label: string): KnownDatabase => ({
   kind: 'database',
