@@ -34,7 +34,10 @@ const SECRET_DIRECTORIES = new Set(['.ssh', '.aws', '.gnupg', '.azure', '.kube',
 function baseName(posixPath: string): string {
   const name = posixPath.split('/').pop() ?? posixPath;
   // Windows ignores trailing dots and spaces, so ".env " can open ".env".
-  return name.replace(/[. ]+$/, '').toLowerCase();
+  // Trimmed with a loop rather than a regex to keep matching linear.
+  let end = name.length;
+  while (end > 0 && (name[end - 1] === '.' || name[end - 1] === ' ')) end--;
+  return name.slice(0, end).toLowerCase();
 }
 
 /** True if a file with this path must never be opened. */
