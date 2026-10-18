@@ -98,7 +98,12 @@ export function App({ data }: { data: ViewerData }) {
             />
           </div>
         </section>
-        <DetailsPanel index={index} root={data.root} selected={selected} />
+        <DetailsPanel
+          index={index}
+          root={data.root}
+          explanations={data.explanations}
+          selected={selected}
+        />
       </div>
     </div>
   );

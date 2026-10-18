@@ -10,6 +10,15 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((v) => typeof v === 'string');
 }
 
+function stringRecord(value: unknown): Record<string, string> {
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string',
+    ),
+  );
+}
+
 function isNode(value: unknown): value is GraphNode {
   return isRecord(value) && typeof value.id === 'string' && NODE_KINDS.has(value.kind as string);
 }
@@ -60,6 +69,7 @@ export function parseViewerData(raw: unknown): ViewerData | undefined {
     graph: parsed,
     root: typeof raw.root === 'string' ? raw.root : '',
     protectedFiles: isStringArray(raw.protectedFiles) ? raw.protectedFiles : [],
+    explanations: stringRecord(raw.explanations),
   };
 }
 

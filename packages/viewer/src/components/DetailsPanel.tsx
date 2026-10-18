@@ -3,10 +3,11 @@ import { describeConnection, editorLink, type Index, shortName } from '../model.
 interface Props {
   index: Index;
   root: string;
+  explanations: Record<string, string>;
   selected: string | undefined;
 }
 
-export function DetailsPanel({ index, root, selected }: Props) {
+export function DetailsPanel({ index, root, explanations, selected }: Props) {
   const connection = selected === undefined ? undefined : index.connections.get(selected);
   const from = connection && index.nodes.get(connection.from);
   const to = connection && index.nodes.get(connection.to);
@@ -30,7 +31,16 @@ export function DetailsPanel({ index, root, selected }: Props) {
         <code>{shortName(from)}</code> → <code>{shortName(to)}</code>
       </h3>
       <span className="verb">{connection.label}</span>
-      <p className="summary">{describeConnection(index, connection)}</p>
+      {Object.hasOwn(explanations, connection.id) ? (
+        <p className="summary">{explanations[connection.id]}</p>
+      ) : (
+        <>
+          <p className="summary">{describeConnection(index, connection)}</p>
+          <p className="pending">
+            Run <code>/grapher</code> in Claude Code to get a fuller explanation of this connection.
+          </p>
+        </>
+      )}
       <div className="refs">
         <h4>Where in the code</h4>
         <ul>
