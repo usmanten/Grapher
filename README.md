@@ -11,7 +11,7 @@ Modern tools make it easy to generate a lot of code quickly. Understanding how a
 
 It is built for students and anyone still learning how real projects are structured.
 
-> **Status:** early development. The scanner works today. The graph, viewer and explanations are being built. See the [roadmap](#roadmap).
+> **Status:** early development. The scanner and connection detection work today. The graph, viewer and explanations are being built. See the [roadmap](#roadmap).
 
 <!-- Screenshot of the viewer goes here once it ships in v0.1. -->
 
@@ -48,6 +48,14 @@ Scanned /home/you/my-app
 
 Add `--json` for machine-readable output.
 
+To map how the project connects and save it to `.grapher/graph.json`:
+
+```sh
+pnpm grapher graph /path/to/your/nextjs-app
+```
+
+Try it on the included sample app with `pnpm grapher graph examples/sample-app`.
+
 ## How it works
 
 ```mermaid
@@ -80,7 +88,7 @@ See [SECURITY.md](SECURITY.md) and the [threat model](docs/threat-model.md) for 
 ## Roadmap
 
 - [x] Project scanner with secret-file protection
-- [ ] Connection detection: imports, pages, API routes, fetch calls, server actions, Prisma, Drizzle, Supabase, outside services, settings
+- [x] Connection detection: imports, pages, API routes, fetch calls, server actions, Prisma, Drizzle, Supabase, outside services, settings
 - [ ] Interactive viewer with file view, full-flow tracing and an overview
 - [ ] `/grapher` command for Claude Code with cached explanations
 - [ ] Snippet scrubbing and a final output safety check

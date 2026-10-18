@@ -9,3 +9,4 @@ Each file here records one significant decision: the context, what was decided, 
 | 0003 | [The CLI makes no network requests](0003-no-network-in-cli.md)                                               |
 | 0004 | [Secret files are denylisted and all reads go through one gate](0004-secret-denylist-and-read-gate.md)       |
 | 0005 | [Stay on TypeScript 6 for now](0005-typescript-6.md)                                                         |
+| 0006 | [Parse code in memory, from approved files only](0006-in-memory-parsing.md)                                  |
