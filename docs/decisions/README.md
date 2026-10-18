@@ -13,3 +13,4 @@ Each file here records one significant decision: the context, what was decided, 
 | 0007 | [Ship the viewer as one self-contained HTML file](0007-single-file-viewer.md)                                |
 | 0008 | [Scrub snippets and fail closed on output](0008-scrub-and-fail-closed.md)                                    |
 | 0009 | [Write explanations through the user's Claude Code session](0009-explanations-through-claude-code.md)        |
+| 0010 | [Fewer steps for explanations](0010-fewer-steps-for-explanations.md)                                         |

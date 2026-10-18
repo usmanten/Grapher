@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- Explanations are written about twice as fast and at about half the cost. A first run on Grapher's own code went from about 97 to 53 seconds, and on a 152-connection Next.js site from about 116 to 62 seconds. Requests now hold as many connections as fit on Claude Code's screen, number them instead of repeating long ids, and each save prints the next request straight away.
+
 ### Fixed
 
 - Grapher no longer refuses to save the map when the project's folder path mixes capitals and digits, like `/home/you/code/2024/FinalProject-Web`. The folder is now checked one folder name at a time, so a folder named like a key is still caught.
