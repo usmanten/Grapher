@@ -23,7 +23,7 @@ flowchart LR
 | Detect       | Done    | Finds pages, API routes, fetch calls, server actions, database code, outside services and settings   |
 | Graph        | Done    | Writes a versioned `graph.json` with nodes, connections and file:line locations                      |
 | Explain      | Planned | The `/grapher` command in Claude Code writes short explanations from scrubbed snippets               |
-| Safety check | Planned | Scans everything Grapher writes for secret-like values and refuses to save if any are found          |
+| Safety check | Done    | Scans everything Grapher writes for secret-like values and refuses to save if any are found          |
 | Viewer       | Done    | A single self-contained HTML page built with React and React Flow                                    |
 
 ## Packages
@@ -57,6 +57,14 @@ A symlink can point anywhere, including outside the project or at a secret file 
 - **`builder.ts`** merges everything found between the same two nodes into one connection with one plain-word label, like "reads and saves users", keeping up to five code locations. Output is sorted so the same project always produces the same file.
 
 The output writer (`packages/core/src/output`) saves `.grapher/graph.json`, adds a `.gitignore` inside `.grapher/` so the folder is never committed, and refuses to write through a symlink.
+
+## Secret safety (`packages/core/src/safety`)
+
+- **`detect.ts`** finds secret-looking text: published key formats (Stripe, OpenAI, Anthropic, AWS, GitHub and others), private key blocks, logins inside URLs, values assigned to names like `password` or `apiKey`, and long random-looking strings. `scrub` replaces each match with `[hidden]`.
+- **`check.ts`** walks everything about to be written and reports where a match is and what kind it is, never the value. `assertNoSecrets` throws when anything matches.
+- **`analyze/snippets.ts`** adds one scrubbed line of code to each connection location, cut to 160 characters.
+
+`writeGraph` and `renderViewer` both call `assertNoSecrets`, and the CLI builds and checks both outputs before writing either, so a failed check leaves nothing half-written (see [ADR 0008](decisions/0008-scrub-and-fail-closed.md)).
 
 ## The viewer (`packages/viewer`)
 

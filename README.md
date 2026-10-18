@@ -83,6 +83,8 @@ Grapher's core promise is that **it may show a secret's name, never its value.**
 
 - Files like `.env`, `.env.local`, `*.pem`, `*.key` and credential JSON files are never opened. Templates like `.env.example` are allowed.
 - All file reads go through one gate that refuses secret files, symlinks and anything outside your project.
+- Each connection shows just the one line of code behind it. Anything in that line that looks like a key, token, password or private key is replaced with `[hidden]`.
+- Before saving, Grapher checks everything it is about to write. If anything still looks like a secret, it stops and saves nothing, and the error says where without repeating the value.
 - The Grapher program makes no network requests. Your code stays on your machine.
 
 See [SECURITY.md](SECURITY.md) and the [threat model](docs/threat-model.md) for details, and to report a problem privately.
@@ -93,7 +95,7 @@ See [SECURITY.md](SECURITY.md) and the [threat model](docs/threat-model.md) for 
 - [x] Connection detection: imports, pages, API routes, fetch calls, server actions, Prisma, Drizzle, Supabase, outside services, settings
 - [x] Interactive viewer with file view, full-flow tracing and an overview
 - [ ] `/grapher` command for Claude Code with cached explanations
-- [ ] Snippet scrubbing and a final output safety check
+- [x] Snippet scrubbing and a final output safety check
 - [ ] v0.1.0 release
 
 Later: a "what changed since the last commit" view, Pages Router support, Python projects, and watch mode.

@@ -24,6 +24,7 @@ pnpm build
 | `pnpm format`        | Formats the code with Prettier                        |
 | `pnpm test`          | Runs the test suite                                   |
 | `pnpm test:coverage` | Runs tests with coverage (80% minimum for core)       |
+| `pnpm test:secrets`  | Runs Grapher on a project full of fake secrets        |
 | `pnpm test:e2e`      | Opens the viewer in a browser and clicks through it   |
 | `pnpm grapher`       | Runs the built CLI, for example `pnpm grapher scan .` |
 
