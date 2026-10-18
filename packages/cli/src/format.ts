@@ -1,4 +1,4 @@
-import type { ScanResult, SkipReason } from '@grapher/core';
+import type { Graph, ScanResult, SkipReason } from '@grapher/core';
 
 const REASON_LABELS: Record<SkipReason, string> = {
   'secret-file': 'secret files (never opened)',
@@ -51,5 +51,30 @@ export function formatScanSummary(scan: ScanResult): string {
   if (scan.truncated) {
     lines.push('', '  Stopped early: the file limit was reached. Is this the right folder?');
   }
+  return lines.join('\n');
+}
+
+/** Summarizes a graph: what kinds of things were found, and any warnings. */
+export function formatGraphSummary(graph: Graph): string {
+  const count = (test: (n: Graph['nodes'][number]) => boolean) => graph.nodes.filter(test).length;
+  const files = count((n) => n.kind === 'file');
+  const pages = count((n) => n.kind === 'file' && n.role === 'page');
+  const routes = count((n) => n.kind === 'file' && n.role === 'route');
+  const databases = graph.nodes.filter((n) => n.kind === 'database').map((n) => n.label);
+  const services = graph.nodes.filter((n) => n.kind === 'service').map((n) => n.label);
+  const settings = count((n) => n.kind === 'setting');
+
+  const lines = [
+    `Mapped ${printable(graph.project.name)}`,
+    `  ${plural(files, 'file')}, including ${plural(pages, 'page')} and ${plural(routes, 'API route')}`,
+    `  ${plural(graph.connections.length, 'connection')}`,
+  ];
+  if (databases.length > 0) lines.push(`  Databases: ${databases.map(printable).join(', ')}`);
+  if (services.length > 0) lines.push(`  Outside services: ${services.map(printable).join(', ')}`);
+  if (settings > 0) lines.push(`  ${plural(settings, 'setting')} (names only, never values)`);
+  if (graph.unknownPackages.length > 0) {
+    lines.push(`  Not yet identified: ${graph.unknownPackages.map(printable).join(', ')}`);
+  }
+  for (const warning of graph.warnings) lines.push('', `  Note: ${printable(warning.message)}`);
   return lines.join('\n');
 }

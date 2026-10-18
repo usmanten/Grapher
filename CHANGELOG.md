@@ -13,4 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `.gitignore` support, including nested files and negation rules.
 - A single safe reader for file contents that refuses secret files, symlinks, paths outside the project and oversized files.
 - `grapher scan [folder]` command with a readable summary and `--json` output.
+- `grapher graph [folder]` maps a Next.js App Router project and saves `.grapher/graph.json` (`--json` prints it instead).
+- Connection detection without AI: imports (including `@/` path aliases), pages and the components they display, API routes and their methods, `fetch`/axios/ky calls matched to the route they hit, server actions, Prisma, Drizzle and Supabase tables with read/save/delete, known outside services and databases, and settings from `process.env` (names only).
+- A JSON Schema for `graph.json` and a sample Next.js app used for integration and snapshot tests.
+- A warning when a project uses the Pages Router, which is not fully supported yet.
 - CI with linting, type checks, tests with coverage, CodeQL, dependency review, a dependency audit and secret scanning.

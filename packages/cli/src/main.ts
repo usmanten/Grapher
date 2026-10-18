@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 
-import { scanProject } from '@grapher/core';
+import { analyzeProject, OUTPUT_DIR, scanProject, writeGraph } from '@grapher/core';
 
-import { formatScanSummary } from './format.js';
+import { formatGraphSummary, formatScanSummary } from './format.js';
 
 export interface Io {
   out(text: string): void;
@@ -13,10 +13,11 @@ export interface Io {
 const HELP = `Usage: grapher <command> [options]
 
 Commands:
+  graph [folder]  Map how the project connects and save it to .grapher/graph.json
   scan [folder]   List the files Grapher would analyze, and what it skips
 
 Options:
-  --json          Print machine-readable output
+  --json          Print machine-readable output instead (nothing is saved)
   -h, --help      Show this help
   -v, --version   Show the version`;
 
@@ -55,14 +56,24 @@ export async function main(argv: readonly string[], io: Io): Promise<number> {
     io.out(HELP);
     return 0;
   }
-  if (command !== 'scan' || extra.length > 0) {
+  if ((command !== 'scan' && command !== 'graph') || extra.length > 0) {
     io.err(`Unknown command: ${positionals.join(' ')}\n\n${HELP}`);
     return 2;
   }
 
   try {
-    const result = await scanProject(folder);
-    io.out(values.json ? JSON.stringify(result, null, 2) : formatScanSummary(result));
+    if (command === 'scan') {
+      const result = await scanProject(folder);
+      io.out(values.json ? JSON.stringify(result, null, 2) : formatScanSummary(result));
+      return 0;
+    }
+    const { graph, scan } = await analyzeProject(folder);
+    if (values.json) {
+      io.out(JSON.stringify(graph, null, 2));
+      return 0;
+    }
+    await writeGraph(scan.root, graph);
+    io.out(`${formatGraphSummary(graph)}\n\nSaved ${OUTPUT_DIR}/graph.json`);
     return 0;
   } catch (error) {
     io.err(`grapher: ${(error as Error).message}`);

@@ -1,0 +1,683 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "sample-app",
+    "framework": "next-app-router"
+  },
+  "nodes": [
+    {
+      "id": "database:postgres",
+      "kind": "database",
+      "label": "Postgres",
+      "via": "Prisma"
+    },
+    {
+      "id": "file:app/(marketing)/about/page.tsx",
+      "kind": "file",
+      "path": "app/(marketing)/about/page.tsx",
+      "role": "page",
+      "urlPath": "/about"
+    },
+    {
+      "id": "file:app/actions.ts",
+      "kind": "file",
+      "path": "app/actions.ts",
+      "role": "server-actions"
+    },
+    {
+      "id": "file:app/api/checkout/route.ts",
+      "kind": "file",
+      "path": "app/api/checkout/route.ts",
+      "role": "route",
+      "urlPath": "/api/checkout",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "id": "file:app/api/users/[id]/route.ts",
+      "kind": "file",
+      "path": "app/api/users/[id]/route.ts",
+      "role": "route",
+      "urlPath": "/api/users/[id]",
+      "methods": [
+        "DELETE"
+      ]
+    },
+    {
+      "id": "file:app/api/users/route.ts",
+      "kind": "file",
+      "path": "app/api/users/route.ts",
+      "role": "route",
+      "urlPath": "/api/users",
+      "methods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "id": "file:app/dashboard/page.tsx",
+      "kind": "file",
+      "path": "app/dashboard/page.tsx",
+      "role": "page",
+      "urlPath": "/dashboard"
+    },
+    {
+      "id": "file:app/layout.tsx",
+      "kind": "file",
+      "path": "app/layout.tsx",
+      "role": "layout"
+    },
+    {
+      "id": "file:app/page.tsx",
+      "kind": "file",
+      "path": "app/page.tsx",
+      "role": "page",
+      "urlPath": "/"
+    },
+    {
+      "id": "file:app/posts/new/page.tsx",
+      "kind": "file",
+      "path": "app/posts/new/page.tsx",
+      "role": "page",
+      "urlPath": "/posts/new"
+    },
+    {
+      "id": "file:app/signup/page.tsx",
+      "kind": "file",
+      "path": "app/signup/page.tsx",
+      "role": "page",
+      "urlPath": "/signup"
+    },
+    {
+      "id": "file:components/CheckoutButton.tsx",
+      "kind": "file",
+      "path": "components/CheckoutButton.tsx",
+      "role": "component",
+      "client": true
+    },
+    {
+      "id": "file:components/Nav.tsx",
+      "kind": "file",
+      "path": "components/Nav.tsx",
+      "role": "component"
+    },
+    {
+      "id": "file:components/SignupForm.tsx",
+      "kind": "file",
+      "path": "components/SignupForm.tsx",
+      "role": "component",
+      "client": true
+    },
+    {
+      "id": "file:components/UserCard.tsx",
+      "kind": "file",
+      "path": "components/UserCard.tsx",
+      "role": "component",
+      "client": true
+    },
+    {
+      "id": "file:lib/db.ts",
+      "kind": "file",
+      "path": "lib/db.ts",
+      "role": "module"
+    },
+    {
+      "id": "file:lib/email.ts",
+      "kind": "file",
+      "path": "lib/email.ts",
+      "role": "module"
+    },
+    {
+      "id": "file:lib/stripe.ts",
+      "kind": "file",
+      "path": "lib/stripe.ts",
+      "role": "module"
+    },
+    {
+      "id": "file:lib/validation.ts",
+      "kind": "file",
+      "path": "lib/validation.ts",
+      "role": "module"
+    },
+    {
+      "id": "file:prisma/schema.prisma",
+      "kind": "file",
+      "path": "prisma/schema.prisma",
+      "role": "config"
+    },
+    {
+      "id": "service:resend",
+      "kind": "service",
+      "label": "Resend",
+      "source": "resend"
+    },
+    {
+      "id": "service:stripe",
+      "kind": "service",
+      "label": "Stripe",
+      "source": "stripe"
+    },
+    {
+      "id": "setting:DATABASE_URL",
+      "kind": "setting",
+      "name": "DATABASE_URL",
+      "public": false
+    },
+    {
+      "id": "setting:NEXT_PUBLIC_SITE_URL",
+      "kind": "setting",
+      "name": "NEXT_PUBLIC_SITE_URL",
+      "public": true
+    },
+    {
+      "id": "setting:RESEND_API_KEY",
+      "kind": "setting",
+      "name": "RESEND_API_KEY",
+      "public": false
+    },
+    {
+      "id": "setting:STRIPE_SECRET_KEY",
+      "kind": "setting",
+      "name": "STRIPE_SECRET_KEY",
+      "public": false
+    }
+  ],
+  "connections": [
+    {
+      "id": "file:app/(marketing)/about/page.tsx->setting:NEXT_PUBLIC_SITE_URL",
+      "from": "file:app/(marketing)/about/page.tsx",
+      "to": "setting:NEXT_PUBLIC_SITE_URL",
+      "kind": "reads-setting",
+      "label": "reads setting",
+      "locations": [
+        {
+          "path": "app/(marketing)/about/page.tsx",
+          "line": 2,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:app/actions.ts->database:postgres",
+      "from": "file:app/actions.ts",
+      "to": "database:postgres",
+      "kind": "writes",
+      "label": "saves to posts",
+      "locations": [
+        {
+          "path": "app/actions.ts",
+          "line": 7,
+          "role": "use"
+        }
+      ],
+      "details": [
+        "posts"
+      ]
+    },
+    {
+      "id": "file:app/actions.ts->file:lib/db.ts",
+      "from": "file:app/actions.ts",
+      "to": "file:lib/db.ts",
+      "kind": "uses",
+      "label": "uses db",
+      "locations": [
+        {
+          "path": "app/actions.ts",
+          "line": 3,
+          "role": "import"
+        },
+        {
+          "path": "app/actions.ts",
+          "line": 7,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:app/actions.ts->file:lib/validation.ts",
+      "from": "file:app/actions.ts",
+      "to": "file:lib/validation.ts",
+      "kind": "uses",
+      "label": "uses formatTitle",
+      "locations": [
+        {
+          "path": "app/actions.ts",
+          "line": 4,
+          "role": "import"
+        },
+        {
+          "path": "app/actions.ts",
+          "line": 8,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:app/api/checkout/route.ts->file:lib/stripe.ts",
+      "from": "file:app/api/checkout/route.ts",
+      "to": "file:lib/stripe.ts",
+      "kind": "uses",
+      "label": "uses stripe",
+      "locations": [
+        {
+          "path": "app/api/checkout/route.ts",
+          "line": 3,
+          "role": "import"
+        },
+        {
+          "path": "app/api/checkout/route.ts",
+          "line": 6,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:app/api/checkout/route.ts->setting:NEXT_PUBLIC_SITE_URL",
+      "from": "file:app/api/checkout/route.ts",
+      "to": "setting:NEXT_PUBLIC_SITE_URL",
+      "kind": "reads-setting",
+      "label": "reads setting",
+      "locations": [
+        {
+          "path": "app/api/checkout/route.ts",
+          "line": 9,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:app/api/users/[id]/route.ts->database:postgres",
+      "from": "file:app/api/users/[id]/route.ts",
+      "to": "database:postgres",
+      "kind": "writes",
+      "label": "deletes from users",
+      "locations": [
+        {
+          "path": "app/api/users/[id]/route.ts",
+          "line": 5,
+          "role": "use"
+        }
+      ],
+      "details": [
+        "users"
+      ]
+    },
+    {
+      "id": "file:app/api/users/[id]/route.ts->file:lib/db.ts",
+      "from": "file:app/api/users/[id]/route.ts",
+      "to": "file:lib/db.ts",
+      "kind": "uses",
+      "label": "uses db",
+      "locations": [
+        {
+          "path": "app/api/users/[id]/route.ts",
+          "line": 1,
+          "role": "import"
+        },
+        {
+          "path": "app/api/users/[id]/route.ts",
+          "line": 5,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:app/api/users/route.ts->database:postgres",
+      "from": "file:app/api/users/route.ts",
+      "to": "database:postgres",
+      "kind": "writes",
+      "label": "reads and saves users",
+      "locations": [
+        {
+          "path": "app/api/users/route.ts",
+          "line": 8,
+          "role": "use"
+        },
+        {
+          "path": "app/api/users/route.ts",
+          "line": 14,
+          "role": "use"
+        }
+      ],
+      "details": [
+        "users"
+      ]
+    },
+    {
+      "id": "file:app/api/users/route.ts->file:lib/db.ts",
+      "from": "file:app/api/users/route.ts",
+      "to": "file:lib/db.ts",
+      "kind": "uses",
+      "label": "uses db",
+      "locations": [
+        {
+          "path": "app/api/users/route.ts",
+          "line": 3,
+          "role": "import"
+        },
+        {
+          "path": "app/api/users/route.ts",
+          "line": 8,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:app/api/users/route.ts->file:lib/email.ts",
+      "from": "file:app/api/users/route.ts",
+      "to": "file:lib/email.ts",
+      "kind": "uses",
+      "label": "uses sendWelcomeEmail",
+      "locations": [
+        {
+          "path": "app/api/users/route.ts",
+          "line": 4,
+          "role": "import"
+        },
+        {
+          "path": "app/api/users/route.ts",
+          "line": 15,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:app/api/users/route.ts->file:lib/validation.ts",
+      "from": "file:app/api/users/route.ts",
+      "to": "file:lib/validation.ts",
+      "kind": "uses",
+      "label": "uses signupSchema",
+      "locations": [
+        {
+          "path": "app/api/users/route.ts",
+          "line": 5,
+          "role": "import"
+        },
+        {
+          "path": "app/api/users/route.ts",
+          "line": 13,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:app/dashboard/page.tsx->database:postgres",
+      "from": "file:app/dashboard/page.tsx",
+      "to": "database:postgres",
+      "kind": "reads",
+      "label": "reads from users",
+      "locations": [
+        {
+          "path": "app/dashboard/page.tsx",
+          "line": 6,
+          "role": "use"
+        }
+      ],
+      "details": [
+        "users"
+      ]
+    },
+    {
+      "id": "file:app/dashboard/page.tsx->file:components/UserCard.tsx",
+      "from": "file:app/dashboard/page.tsx",
+      "to": "file:components/UserCard.tsx",
+      "kind": "displays",
+      "label": "displays",
+      "locations": [
+        {
+          "path": "app/dashboard/page.tsx",
+          "line": 1,
+          "role": "import"
+        },
+        {
+          "path": "app/dashboard/page.tsx",
+          "line": 10,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:app/dashboard/page.tsx->file:lib/db.ts",
+      "from": "file:app/dashboard/page.tsx",
+      "to": "file:lib/db.ts",
+      "kind": "uses",
+      "label": "uses db",
+      "locations": [
+        {
+          "path": "app/dashboard/page.tsx",
+          "line": 2,
+          "role": "import"
+        },
+        {
+          "path": "app/dashboard/page.tsx",
+          "line": 6,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:app/layout.tsx->file:components/Nav.tsx",
+      "from": "file:app/layout.tsx",
+      "to": "file:components/Nav.tsx",
+      "kind": "displays",
+      "label": "displays",
+      "locations": [
+        {
+          "path": "app/layout.tsx",
+          "line": 1,
+          "role": "import"
+        },
+        {
+          "path": "app/layout.tsx",
+          "line": 7,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:app/page.tsx->file:components/CheckoutButton.tsx",
+      "from": "file:app/page.tsx",
+      "to": "file:components/CheckoutButton.tsx",
+      "kind": "displays",
+      "label": "displays",
+      "locations": [
+        {
+          "path": "app/page.tsx",
+          "line": 1,
+          "role": "import"
+        },
+        {
+          "path": "app/page.tsx",
+          "line": 7,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:app/posts/new/page.tsx->file:app/actions.ts",
+      "from": "file:app/posts/new/page.tsx",
+      "to": "file:app/actions.ts",
+      "kind": "uses",
+      "label": "uses createPost",
+      "locations": [
+        {
+          "path": "app/posts/new/page.tsx",
+          "line": 1,
+          "role": "import"
+        },
+        {
+          "path": "app/posts/new/page.tsx",
+          "line": 5,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:app/signup/page.tsx->file:components/SignupForm.tsx",
+      "from": "file:app/signup/page.tsx",
+      "to": "file:components/SignupForm.tsx",
+      "kind": "displays",
+      "label": "displays",
+      "locations": [
+        {
+          "path": "app/signup/page.tsx",
+          "line": 1,
+          "role": "import"
+        },
+        {
+          "path": "app/signup/page.tsx",
+          "line": 4,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:components/CheckoutButton.tsx->file:app/api/checkout/route.ts",
+      "from": "file:components/CheckoutButton.tsx",
+      "to": "file:app/api/checkout/route.ts",
+      "kind": "requests",
+      "label": "sends a POST request to",
+      "locations": [
+        {
+          "path": "components/CheckoutButton.tsx",
+          "line": 5,
+          "role": "use"
+        }
+      ],
+      "details": [
+        "POST"
+      ]
+    },
+    {
+      "id": "file:components/SignupForm.tsx->file:app/api/users/route.ts",
+      "from": "file:components/SignupForm.tsx",
+      "to": "file:app/api/users/route.ts",
+      "kind": "requests",
+      "label": "sends a POST request to",
+      "locations": [
+        {
+          "path": "components/SignupForm.tsx",
+          "line": 9,
+          "role": "use"
+        }
+      ],
+      "details": [
+        "POST"
+      ]
+    },
+    {
+      "id": "file:components/UserCard.tsx->file:app/api/users/[id]/route.ts",
+      "from": "file:components/UserCard.tsx",
+      "to": "file:app/api/users/[id]/route.ts",
+      "kind": "requests",
+      "label": "sends a DELETE request to",
+      "locations": [
+        {
+          "path": "components/UserCard.tsx",
+          "line": 5,
+          "role": "use"
+        }
+      ],
+      "details": [
+        "DELETE"
+      ]
+    },
+    {
+      "id": "file:lib/db.ts->database:postgres",
+      "from": "file:lib/db.ts",
+      "to": "database:postgres",
+      "kind": "connects",
+      "label": "connects to",
+      "locations": [
+        {
+          "path": "lib/db.ts",
+          "line": 6,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:lib/email.ts->service:resend",
+      "from": "file:lib/email.ts",
+      "to": "service:resend",
+      "kind": "uses-service",
+      "label": "uses Resend",
+      "locations": [
+        {
+          "path": "lib/email.ts",
+          "line": 1,
+          "role": "import"
+        },
+        {
+          "path": "lib/email.ts",
+          "line": 3,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:lib/email.ts->setting:RESEND_API_KEY",
+      "from": "file:lib/email.ts",
+      "to": "setting:RESEND_API_KEY",
+      "kind": "reads-setting",
+      "label": "reads setting",
+      "locations": [
+        {
+          "path": "lib/email.ts",
+          "line": 3,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:lib/stripe.ts->service:stripe",
+      "from": "file:lib/stripe.ts",
+      "to": "service:stripe",
+      "kind": "uses-service",
+      "label": "uses Stripe",
+      "locations": [
+        {
+          "path": "lib/stripe.ts",
+          "line": 1,
+          "role": "import"
+        },
+        {
+          "path": "lib/stripe.ts",
+          "line": 3,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:lib/stripe.ts->setting:STRIPE_SECRET_KEY",
+      "from": "file:lib/stripe.ts",
+      "to": "setting:STRIPE_SECRET_KEY",
+      "kind": "reads-setting",
+      "label": "reads setting",
+      "locations": [
+        {
+          "path": "lib/stripe.ts",
+          "line": 3,
+          "role": "use"
+        }
+      ]
+    },
+    {
+      "id": "file:prisma/schema.prisma->setting:DATABASE_URL",
+      "from": "file:prisma/schema.prisma",
+      "to": "setting:DATABASE_URL",
+      "kind": "reads-setting",
+      "label": "reads setting",
+      "locations": [
+        {
+          "path": "prisma/schema.prisma",
+          "line": 3,
+          "role": "use"
+        }
+      ]
+    }
+  ],
+  "unknownPackages": [],
+  "warnings": []
+}
