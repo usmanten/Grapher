@@ -14,6 +14,7 @@ import {
   kindGroup,
   layoutFor,
   rankColumns,
+  usedByCopy,
 } from '../src/model.js';
 
 // The sample app graph from the core snapshot test keeps these tests realistic.
@@ -26,6 +27,44 @@ const graph = JSON.parse(
 const index = indexGraph(graph);
 
 describe('layoutFor', () => {
+  it('puts a file that goes both ways on both sides, so every line runs left to right', () => {
+    const at = [{ path: 'x', line: 1, role: 'use' as const }];
+    const twoWay = indexGraph({
+      ...graph,
+      nodes: [
+        { id: 'file:app/page.tsx', kind: 'file', path: 'app/page.tsx', role: 'page', urlPath: '/' },
+        { id: 'file:footer.tsx', kind: 'file', path: 'footer.tsx', role: 'component' },
+      ],
+      connections: [
+        {
+          id: 'p->f',
+          from: 'file:app/page.tsx',
+          to: 'file:footer.tsx',
+          kind: 'displays',
+          label: 'displays',
+          locations: at,
+        },
+        {
+          id: 'f->p',
+          from: 'file:footer.tsx',
+          to: 'file:app/page.tsx',
+          kind: 'links',
+          label: 'sends the user to',
+          locations: at,
+        },
+      ],
+    });
+    const layout = layoutFor(twoWay, 'file', 'file:app/page.tsx');
+    const copy = usedByCopy('file:footer.tsx');
+    expect(layout.columns.map((c) => c.nodes)).toEqual([
+      [copy],
+      ['file:app/page.tsx'],
+      ['file:footer.tsx'],
+    ]);
+    expect(layout.copies).toEqual({ [copy]: 'file:footer.tsx' });
+    expect(layout.ends).toEqual({ 'f->p': { from: copy, to: 'file:app/page.tsx' } });
+  });
+
   it('shows what uses a file on the left and what it uses on the right', () => {
     const layout = layoutFor(index, 'file', 'file:app/api/users/route.ts');
     expect(layout.columns.map((c) => c.heading)).toEqual([

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- In the file view, a file that both uses and is used by the selected file now appears on both sides, so its two lines and labels no longer run over each other.
 - Test files are left off the map, and build tools imported only by config files (like `eslint` or `vitest`) are no longer listed as unidentified packages.
 
 ### Added

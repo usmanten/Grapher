@@ -19,7 +19,18 @@ export interface Layout {
   connections: Connection[];
   /** Whether to label every line. The overview hides labels to stay readable. */
   labels: boolean;
+  /**
+   * Extra boxes that stand for a node already on the canvas, keyed by the
+   * box's id. Used when a file both uses and is used by the selected file, so
+   * it can sit on both sides and every line still runs left to right.
+   */
+  copies?: Record<string, string>;
+  /** Where to draw a connection when one of its ends is a copy. */
+  ends?: Record<string, { from: string; to: string }>;
 }
+
+/** The id of the left-hand copy of a node that sits on both sides of the file view. */
+export const usedByCopy = (id: string) => `${id}#used-by`;
 
 /** Fast lookups over a graph, built once. */
 export interface Index {
@@ -202,9 +213,21 @@ export function layoutFor(index: Index, view: View, focus: string | undefined): 
     if (view === 'file') {
       const incoming = index.graph.connections.filter((c) => c.to === id);
       const outgoing = index.graph.connections.filter((c) => c.from === id);
+      // A file that goes both ways (the home page displays the footer, and the
+      // footer links back to the home page) gets a copy on the "Used by" side,
+      // so its two lines don't run over each other.
+      const usedIds = new Set(outgoing.map((c) => c.to));
+      const copies: Record<string, string> = {};
+      const ends: Record<string, { from: string; to: string }> = {};
+      const left = incoming.map((c) => {
+        if (!usedIds.has(c.from)) return c.from;
+        const copy = usedByCopy(c.from);
+        copies[copy] = c.from;
+        ends[c.id] = { from: copy, to: c.to };
+        return copy;
+      });
       const columns: Column[] = [];
-      if (incoming.length > 0)
-        columns.push({ heading: 'Used by', nodes: incoming.map((c) => c.from) });
+      if (incoming.length > 0) columns.push({ heading: 'Used by', nodes: left });
       columns.push({ heading: isOutside(node) ? 'Selected' : 'Selected file', nodes: [id] });
       if (outgoing.length > 0) {
         columns.push({ heading: 'Uses and talks to', nodes: outgoing.map((c) => c.to) });
@@ -215,6 +238,8 @@ export function layoutFor(index: Index, view: View, focus: string | undefined): 
         columns,
         connections: [...incoming, ...outgoing],
         labels: true,
+        copies,
+        ends,
       };
     }
     const set = new Set([...neighbors(index, id, 'in'), ...neighbors(index, id, 'out')]);

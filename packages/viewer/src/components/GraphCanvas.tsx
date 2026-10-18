@@ -91,7 +91,8 @@ export function GraphCanvas({
         });
       }
       column.nodes.forEach((id, row) => {
-        const node = index.nodes.get(id);
+        const real = layout.copies?.[id] ?? id;
+        const node = index.nodes.get(real);
         if (!node) return;
         result.push({
           id,
@@ -101,8 +102,8 @@ export function GraphCanvas({
             name: nodeName(node),
             description: describeNode(node),
             group: kindGroup(node),
-            focused: showFocus && id === focus,
-            highlighted: selectedConnection?.from === id || selectedConnection?.to === id,
+            focused: showFocus && real === focus,
+            highlighted: selectedConnection !== undefined && isEnd(selectedConnection.id, id),
           },
           draggable: false,
           ariaLabel: `${nodeName(node)}, ${describeNode(node)}`,
@@ -110,16 +111,25 @@ export function GraphCanvas({
       });
     });
     return result;
+
+    /** True if this box is drawn as one end of the connection. */
+    function isEnd(connectionId: string, boxId: string): boolean {
+      const connection = index.connections.get(connectionId);
+      if (!connection) return false;
+      const ends = layout.ends?.[connectionId] ?? connection;
+      return ends.from === boxId || ends.to === boxId;
+    }
   }, [index, layout, focus, showFocus, selectedConnection]);
 
   const edges = useMemo(
     () =>
       layout.connections.map((c): Edge => {
         const on = c.id === selected;
+        const ends = layout.ends?.[c.id] ?? c;
         return {
           id: c.id,
-          source: c.from,
-          target: c.to,
+          source: ends.from,
+          target: ends.to,
           ...(layout.labels || on ? { label: c.label } : {}),
           className: on ? 'wire sel' : 'wire',
           markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18 },
@@ -148,7 +158,7 @@ export function GraphCanvas({
       elementsSelectable
       proOptions={{ hideAttribution: true }}
       onNodeClick={(_, node) => {
-        if (node.type === 'box') onSelectNode(node.id);
+        if (node.type === 'box') onSelectNode(layout.copies?.[node.id] ?? node.id);
       }}
       onEdgeClick={(_, edge) => {
         onSelectConnection(edge.id);
