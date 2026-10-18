@@ -1,6 +1,10 @@
-import type { GraphNode } from '../../graph/types.js';
-import type { GraphBuilder } from '../builder.js';
-import { type IdentifiedPackages, isOrdinaryPackage, KNOWN_PACKAGES } from '../known-packages.js';
+import type { GraphNode } from '../../../../graph/types.js';
+import type { GraphBuilder } from '../../../builder.js';
+import {
+  type IdentifiedPackages,
+  isOrdinaryPackage,
+  KNOWN_PACKAGES,
+} from '../../../known-packages.js';
 import { usesOf } from './shared.js';
 import type { PackageImport } from './imports.js';
 

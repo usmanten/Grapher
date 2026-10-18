@@ -1,6 +1,6 @@
 import { type Identifier, type Node, type SourceFile, SyntaxKind } from 'ts-morph';
 
-import type { Location } from '../../graph/types.js';
+import type { Location } from '../../../../graph/types.js';
 import type { AnalyzedFile } from '../project.js';
 
 /** npm package names: `name` or `@scope/name`. */
