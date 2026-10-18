@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      dev-tooling:
+        dependency-type: development
+      runtime:
+        dependency-type: production
+    open-pull-requests-limit: 5
+    ignore:
+      # typescript-eslint does not support TypeScript 7 yet. See docs/decisions/0005-typescript-6.md.
+      - dependency-name: typescript
+        versions: ['>=6.1.0']
+    commit-message:
+      prefix: chore
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+    commit-message:
+      prefix: ci
