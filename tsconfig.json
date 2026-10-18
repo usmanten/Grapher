@@ -5,5 +5,6 @@
     "noEmit": true,
     "rootDir": "."
   },
-  "include": ["*.ts", "*.js", "packages/*/test/**/*.ts", "packages/*/src/**/*.ts"]
+  "include": ["*.ts", "*.js", "packages/*/test/**/*.ts", "packages/*/src/**/*.ts"],
+  "exclude": ["packages/viewer"]
 }

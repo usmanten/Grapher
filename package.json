@@ -9,15 +9,16 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "build": "tsc -b packages/cli",
-    "typecheck": "tsc -b packages/cli && tsc -p tsconfig.json",
+    "build": "tsc -b packages/cli && pnpm --filter @grapher/viewer build",
+    "typecheck": "tsc -b packages/cli && tsc -p tsconfig.json && tsc -p packages/viewer",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "grapher": "node packages/cli/dist/index.js",
-    "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo coverage"
+    "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo coverage packages/viewer/test-results",
+    "test:e2e": "pnpm --filter @grapher/viewer test:e2e"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -26,6 +27,7 @@
     "ajv": "^8.20.0",
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.13.0",
     "prettier": "^3.9.10",
     "typescript": "~6.0.3",
