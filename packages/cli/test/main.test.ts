@@ -65,7 +65,7 @@ describe('grapher CLI', () => {
 });
 
 describe('grapher graph', () => {
-  it('maps the project, saves .grapher/graph.json and never prints secret values', async () => {
+  it('maps the project, saves graph.json and index.html, and never prints secret values', async () => {
     await writeFile(
       path.join(dir, 'route.ts'),
       "export const k = process.env.KEY;\nimport Stripe from 'stripe';\nStripe;",
@@ -76,13 +76,21 @@ describe('grapher graph', () => {
     expect(out).toContain('Mapped');
     expect(out).toContain('Outside services: Stripe');
     expect(out).toContain('1 setting (names only, never values)');
-    expect(out).toContain('Saved .grapher/graph.json');
+    expect(out).toContain('Saved .grapher/graph.json and .grapher/index.html');
+    expect(out).toContain('file://');
     expect(out).toContain('Note: No Next.js app/ folder was found');
     expect(out).not.toContain('not-a-real-value');
     const saved = JSON.parse(await readFile(path.join(dir, '.grapher/graph.json'), 'utf8')) as {
       schemaVersion: number;
     };
     expect(saved.schemaVersion).toBe(1);
+
+    const page = await readFile(path.join(dir, '.grapher/index.html'), 'utf8');
+    expect(page).toContain('Content-Security-Policy');
+    expect(page).toContain('"setting:KEY"');
+    expect(page).not.toContain('not-a-real-value');
+    expect(page).not.toContain('__GRAPHER_DATA__');
+    expect(page).toContain('"protectedFiles":[".env"]');
   });
 
   it('prints the graph with --json and saves nothing', async () => {
