@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import type { Connection, FileNode, Graph } from '@grapher/core';
+import type { Connection, FileNode, Graph, GraphNode } from '@grapher/core';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -141,6 +141,21 @@ describe('text', () => {
   it('describes nodes and connections in plain words', () => {
     const route = index.nodes.get('file:app/api/users/route.ts');
     expect(route && describeNode(route)).toBe('API route: GET, POST /api/users');
+    const views = {
+      id: 'file:blog/views.py',
+      kind: 'file',
+      path: 'blog/views.py',
+      role: 'route',
+      routes: [
+        { path: '/blog/', methods: [] },
+        { path: '/blog/<int:pk>/', methods: ['GET'] },
+        { path: '/blog/new/', methods: ['GET', 'POST'] },
+      ],
+    } as const satisfies GraphNode;
+    expect(describeNode(views)).toBe('Web routes: /blog/, GET /blog/<int:pk>/ and 1 more');
+    expect(describeNode({ ...views, routes: [{ path: '/x', methods: ['POST'] }] })).toBe(
+      'Web route: POST /x',
+    );
     const setting = graph.nodes.find((n) => n.kind === 'setting' && !n.public);
     expect(setting && describeNode(setting)).toBe('Setting, value hidden');
     const request = index.connections.get(

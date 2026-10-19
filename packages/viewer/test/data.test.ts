@@ -31,4 +31,28 @@ describe('parseViewerData', () => {
     expect(data?.root).toBe('');
     expect(data?.protectedFiles).toEqual([]);
   });
+
+  it('keeps known frameworks and drops malformed web routes', () => {
+    const data = parseViewerData({
+      graph: {
+        project: { name: 'api', framework: 'django' },
+        nodes: [
+          {
+            id: 'file:views.py',
+            kind: 'file',
+            path: 'views.py',
+            role: 'route',
+            routes: [{ path: '/a/', methods: [] }, { path: 3 }, { path: '/b/', methods: 'GET' }],
+          },
+        ],
+        connections: [],
+      },
+    });
+    expect(data?.graph.project.framework).toBe('django');
+    expect(data?.graph.nodes[0]).toMatchObject({ routes: [{ path: '/a/', methods: [] }] });
+    const odd = parseViewerData({
+      graph: { project: { framework: 'rails' }, nodes: [], connections: [] },
+    });
+    expect(odd?.graph.project.framework).toBe('unknown');
+  });
 });

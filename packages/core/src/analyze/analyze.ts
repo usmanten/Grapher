@@ -61,13 +61,18 @@ export async function analyzeProject(
     );
   }
 
+  const framework = loaded.find((pack) => pack.framework)?.framework ?? 'unknown';
   const texts = new Map<string, string>();
   for (const pack of loaded) {
     for (const file of pack.files) {
       builder.addNode(file.node);
       texts.set(file.node.path, file.text);
     }
-    for (const warning of pack.warnings) builder.warn(warning);
+    for (const warning of pack.warnings) {
+      // A Django or Flask project with a few scripts isn't a Next.js project missing its app/ folder.
+      if (warning.code === 'no-app-router' && framework !== 'unknown') continue;
+      builder.warn(warning);
+    }
   }
   if (scan.truncated) {
     builder.warn({
@@ -83,7 +88,6 @@ export async function analyzeProject(
   for (const pack of loaded) await pack.findSpecialParts(builder);
 
   const name = loaded.find((pack) => pack.projectName)?.projectName ?? path.basename(scan.root);
-  const framework = loaded.find((pack) => pack.framework)?.framework ?? 'unknown';
   const graph = builder.build({ name, framework });
   addSnippets(graph, texts);
   return { graph, scan };

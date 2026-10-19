@@ -14,7 +14,7 @@
       "required": ["name", "framework"],
       "properties": {
         "name": { "type": "string" },
-        "framework": { "enum": ["next-app-router", "unknown"] }
+        "framework": { "enum": ["next-app-router", "flask", "fastapi", "django", "unknown"] }
       }
     },
     "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
@@ -66,6 +66,21 @@
         "methods": {
           "type": "array",
           "items": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"] }
+        },
+        "routes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "methods"],
+            "properties": {
+              "path": { "type": "string" },
+              "methods": {
+                "type": "array",
+                "items": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"] }
+              }
+            }
+          }
         },
         "client": { "type": "boolean" }
       }

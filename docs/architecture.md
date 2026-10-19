@@ -15,16 +15,16 @@ flowchart LR
   G --> H[Viewer index.html]
 ```
 
-| Stage        | Status | What it does                                                                                             |
-| ------------ | ------ | -------------------------------------------------------------------------------------------------------- |
-| Scan         | Done   | Lists the files that may be analyzed, skipping secrets, dependencies, build output and ignored files     |
-| Read safely  | Done   | The only way to read file contents. Re-checks every rule at read time                                    |
-| Parse        | Done   | Each language pack reads its own files: ts-morph for JavaScript and TypeScript, Tree-sitter for the rest |
-| Detect       | Done   | Finds pages, API routes, fetch calls, server actions, database code, outside services and settings       |
-| Graph        | Done   | Writes a versioned `graph.json` with nodes, connections and file:line locations                          |
-| Explain      | Done   | The `/grapher` command in Claude Code writes short explanations from scrubbed snippets                   |
-| Safety check | Done   | Scans everything Grapher writes for secret-like values and refuses to save if any are found              |
-| Viewer       | Done   | A single self-contained HTML page built with React and React Flow                                        |
+| Stage        | Status | What it does                                                                                               |
+| ------------ | ------ | ---------------------------------------------------------------------------------------------------------- |
+| Scan         | Done   | Lists the files that may be analyzed, skipping secrets, dependencies, build output and ignored files       |
+| Read safely  | Done   | The only way to read file contents. Re-checks every rule at read time                                      |
+| Parse        | Done   | Each language pack reads its own files: ts-morph for JavaScript and TypeScript, Tree-sitter for the rest   |
+| Detect       | Done   | Finds pages, API and web routes, fetch calls, server actions, database code, outside services and settings |
+| Graph        | Done   | Writes a versioned `graph.json` with nodes, connections and file:line locations                            |
+| Explain      | Done   | The `/grapher` command in Claude Code writes short explanations from scrubbed snippets                     |
+| Safety check | Done   | Scans everything Grapher writes for secret-like values and refuses to save if any are found                |
+| Viewer       | Done   | A single self-contained HTML page built with React and React Flow                                          |
 
 ## Packages
 
@@ -59,9 +59,17 @@ Code is read by **language packs** (see [ADR 0010](decisions/0010-language-packs
 - **`next.ts`** knows the App Router conventions: which files are pages, layouts and routes, and which URL a route answers (route groups like `(marketing)` and `@slots` are dropped).
 - **`detectors/`** each look for one kind of connection: `imports`, `requests` (fetch, axios, ky), `navigation` (links, redirects and return addresses that open one of the app's pages), `settings` (`process.env`), `packages` (known services and databases), and `databases` (Prisma, Drizzle, Supabase tables and whether code reads, saves or deletes, plus Supabase database functions).
 
+**Python (`packs/python`)**
+
+- Parses Python with Tree-sitter (the same grammar the basic pack uses) and keeps file links the same way. The syntax trees are read once while loading and freed straight after, since they live in WebAssembly memory.
+- **`project.ts`** knows each file's imports and follows a name like `views.home` or `auth_bp` to the project file it comes from.
+- **`routes.ts`** finds Flask and FastAPI routes from decorators like `@bp.post('/login')`, adding the prefixes of blueprints and routers, also when they are registered in another file. For Django it reads `urlpatterns`, follows `include()` between urls files, and puts each route on the file that holds the view. A file can answer many routes, so they are listed in the file node's `routes`.
+- **`databases.ts`** finds model classes (SQLAlchemy, Flask-SQLAlchemy, SQLModel with `table=True`, Django), then the calls that read, save or delete them, plus hand-written SQL in `execute()`. The database's name comes from the address scheme, Django's `ENGINE`, or a driver in the requirements; only the scheme of an address is ever read.
+- **`packages.ts`** turns imports of outside packages into services and databases, skipping the standard library and the project's own folders. **`settings.ts`** finds environment settings and outside web calls.
+
 **Other languages (`packs/basic`)**
 
-- Parses Python, Java, Go, Rust, C and C++, Ruby and PHP with Tree-sitter (`@vscode/tree-sitter-wasm`, loaded from local files) and maps which file uses which. `languages.ts` says how each language writes an import; `resolve.ts` turns an import into project files, preferring source folders (like `src/main/java/`) that contain the importing file. Go imports use the module path from `go.mod`.
+- Parses Python (when no Python pack is listed), Java, Go, Rust, C and C++, Ruby and PHP with Tree-sitter (`@vscode/tree-sitter-wasm`, loaded from local files) and maps which file uses which. `languages.ts` says how each language writes an import; `resolve.ts` turns an import into project files, preferring source folders (like `src/main/java/`) that contain the importing file. Go imports use the module path from `go.mod`.
 - It finds no routes, databases, services or settings. A full pack for a language, listed before it, takes over that language's files.
 
 **Shared**
@@ -119,6 +127,6 @@ Paths are relative and use forward slashes on every platform, so output is stabl
 
 `graph.json` is described by [`packages/core/schema/graph.schema.json`](../packages/core/schema/graph.schema.json) and carries a `schemaVersion`. In short:
 
-- **Nodes** are files (with a role such as page, route or component, and a URL for pages and routes), databases, outside services, and settings (a name and whether it is public, never a value).
+- **Nodes** are files (with a role such as page, route or component, and a URL for pages and routes; Python route files list every route in `routes`), databases, outside services, and settings (a name and whether it is public, never a value).
 - **Connections** go from the code doing the action to what it uses. Each has a kind, a plain-word label, optional details (tables or HTTP methods) and up to five `path:line` locations.
 - **Warnings** flag things like a Pages Router project or a file that failed to parse, and `unknownPackages` lists packages nobody has identified yet, by name only.

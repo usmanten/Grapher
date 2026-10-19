@@ -4,11 +4,18 @@
  */
 export const GRAPH_SCHEMA_VERSION = 1;
 
-/** What a file does in a Next.js app, decided from its path and contents. */
+/** What a file does in the app, decided from its path and contents. */
 export type FileRole =
   'page' | 'layout' | 'route' | 'middleware' | 'server-actions' | 'component' | 'module' | 'config';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+
+/** One web address a file answers, like `GET /users/<id>` in a Flask app. */
+export interface WebRoute {
+  path: string;
+  /** The HTTP methods it accepts. Empty when the code accepts any method. */
+  methods: HttpMethod[];
+}
 
 export interface FileNode {
   /** `file:<path>` */
@@ -21,6 +28,11 @@ export interface FileNode {
   urlPath?: string;
   /** HTTP methods an API route handles. */
   methods?: HttpMethod[];
+  /**
+   * Every web address the file answers, for frameworks where one file can
+   * hold many routes (Flask, FastAPI, Django views).
+   */
+  routes?: WebRoute[];
   /** True if the file starts with 'use client', so it runs in the browser. */
   client?: boolean;
 }
@@ -44,7 +56,7 @@ export interface ServiceNode {
   id: string;
   kind: 'service';
   label: string;
-  /** The npm package or web host that identified it. */
+  /** The package (npm or Python) or web host that identified it. */
   source: string;
   /** Set when Claude identified the package by its name, because Grapher didn't know it. */
   identifiedBy?: 'ai';
@@ -103,11 +115,14 @@ export interface GraphWarning {
   message: string;
 }
 
+/** The web framework a project is built with, if Grapher recognized one. */
+export type Framework = 'next-app-router' | 'flask' | 'fastapi' | 'django' | 'unknown';
+
 export interface Graph {
   schemaVersion: typeof GRAPH_SCHEMA_VERSION;
   project: {
     name: string;
-    framework: 'next-app-router' | 'unknown';
+    framework: Framework;
   };
   nodes: GraphNode[];
   connections: Connection[];

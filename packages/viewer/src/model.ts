@@ -1,4 +1,4 @@
-import type { Connection, FileNode, Graph, GraphNode } from '@grapher/core';
+import type { Connection, FileNode, Graph, GraphNode, WebRoute } from '@grapher/core';
 
 /** The three ways to look at a project. */
 export type View = 'file' | 'flow' | 'overview';
@@ -150,6 +150,11 @@ export function kindGroup(node: GraphNode): KindGroup {
   }
 }
 
+/** `GET, POST /users`, or just the path when any method is accepted. */
+function routeText(route: WebRoute): string {
+  return route.methods.length > 0 ? `${route.methods.join(', ')} ${route.path}` : route.path;
+}
+
 /** One line describing what a node is, in plain words. */
 export function describeNode(node: GraphNode): string {
   switch (node.kind) {
@@ -169,6 +174,14 @@ export function describeNode(node: GraphNode): string {
         case 'layout':
           return 'Layout around pages';
         case 'route': {
+          if (node.routes && node.routes.length > 1) {
+            const shown = node.routes.slice(0, 2).map(routeText).join(', ');
+            const more = node.routes.length - 2;
+            return `Web routes: ${shown}${more > 0 ? ` and ${more} more` : ''}`;
+          }
+          if (node.routes?.length === 1 && node.routes[0]) {
+            return `Web route: ${routeText(node.routes[0])}`;
+          }
           const methods = node.methods?.join(', ');
           const url = node.urlPath ?? '';
           return methods ? `API route: ${methods} ${url}` : `API route at ${url}`;
