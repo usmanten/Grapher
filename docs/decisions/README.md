@@ -15,4 +15,4 @@ Each file here records one significant decision: the context, what was decided, 
 | 0009 | [Write explanations through the user's Claude Code session](0009-explanations-through-claude-code.md)        |
 | 0010 | [Read each language through a language pack](0010-language-packs.md)                                         |
 | 0011 | [Fewer steps for explanations](0011-fewer-steps-for-explanations.md)                                         |
-| 0012 | [Map the Pages Router in the JavaScript pack](0012-pages-router.md)                                          |
+| 0013 | [Map the Pages Router in the JavaScript pack](0013-pages-router.md)                                          |

@@ -56,7 +56,7 @@ Code is read by **language packs** (see [ADR 0010](decisions/0010-language-packs
 **JavaScript and TypeScript (`packs/javascript`)**
 
 - **`project.ts`** loads every approved code file through the safe reader into a ts-morph project that lives only in memory (see [ADR 0006](decisions/0006-in-memory-parsing.md)). Path aliases come from `tsconfig.json` or `jsconfig.json`; `extends` is not followed.
-- **`next.ts`** knows the Next.js conventions for both routers: which files are pages, layouts and routes, and which URL each answers. In `app/`, folder names make the URL (route groups like `(marketing)` and `@slots` are dropped). In `pages/`, the file name does, `index` stands for its folder, `_app` and `_document` are layouts, and `pages/api/` holds API routes. `pages/` only counts when the project uses Next.js (see [ADR 0012](decisions/0012-pages-router.md)).
+- **`next.ts`** knows the Next.js conventions for both routers: which files are pages, layouts and routes, and which URL each answers. In `app/`, folder names make the URL (route groups like `(marketing)` and `@slots` are dropped). In `pages/`, the file name does, `index` stands for its folder, `_app` and `_document` are layouts, and `pages/api/` holds API routes. `pages/` only counts when the project uses Next.js (see [ADR 0013](decisions/0013-pages-router.md)).
 - **`detectors/`** each look for one kind of connection: `imports`, `requests` (fetch, axios, ky), `navigation` (links, redirects and return addresses that open one of the app's pages), `settings` (`process.env`), `packages` (known services and databases), and `databases` (Prisma, Drizzle, Supabase tables and whether code reads, saves or deletes, plus Supabase database functions).
 
 **Other languages (`packs/basic`)**

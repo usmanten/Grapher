@@ -1,4 +1,4 @@
-# 12. Map the Pages Router in the JavaScript pack
+# 13. Map the Pages Router in the JavaScript pack
 
 - Status: Accepted
 - Date: 2026-10-19
