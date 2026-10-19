@@ -15,6 +15,8 @@ import {
   kindGroup,
   layoutFor,
   rankColumns,
+  shortName,
+  shortPaths,
   unusedFiles,
   usedByCopy,
 } from '../src/model.js';
@@ -182,6 +184,41 @@ describe('text', () => {
 
   it('groups nodes by color kind', () => {
     expect(graph.nodes.map(kindGroup)).not.toContain(undefined);
+  });
+});
+
+describe('shortPaths', () => {
+  const files = (...paths: string[]): Graph => ({
+    ...graph,
+    nodes: paths.map((path) => ({ id: `file:${path}`, kind: 'file', path, role: 'module' })),
+    connections: [],
+  });
+
+  it('adds folders only until files with the same name can be told apart', () => {
+    const names = shortPaths(
+      files(
+        'packages/cli/src/main.ts',
+        'packages/core/src/main.ts',
+        'packages/core/src/analyze/builder.ts',
+        'main.ts',
+      ),
+    );
+    expect(names.get('file:packages/cli/src/main.ts')).toBe('cli/src/main.ts');
+    expect(names.get('file:packages/core/src/main.ts')).toBe('core/src/main.ts');
+    expect(names.get('file:packages/core/src/analyze/builder.ts')).toBe('analyze/builder.ts');
+    expect(names.get('file:main.ts')).toBe('main.ts');
+  });
+
+  it('keeps a whole path when another file ends with it', () => {
+    const names = shortPaths(files('lib/db.ts', 'apps/web/lib/db.ts'));
+    expect(names.get('file:lib/db.ts')).toBe('lib/db.ts');
+    expect(names.get('file:apps/web/lib/db.ts')).toBe('web/lib/db.ts');
+  });
+
+  it('is what sentences and headings use', () => {
+    const small = indexGraph(files('apps/a/src/main.ts', 'apps/b/src/main.ts'));
+    const node = small.nodes.get('file:apps/a/src/main.ts');
+    expect(node && shortName(small, node)).toBe('a/src/main.ts');
   });
 });
 

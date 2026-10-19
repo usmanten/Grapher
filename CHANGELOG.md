@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- In a monorepo, imports of the project's own packages (like `@acme/core`) now link to that package's files instead of showing up as an outside library. Grapher reads each package's `package.json` to find its entry file, and follows a built path like `dist/index.js` back to `src/index.ts`.
+- Files with the same name in different packages no longer look alike in explanations and headings. The viewer adds folders until the names differ, so `packages/cli/src/index.ts` and `packages/core/src/index.ts` show as `cli/src/index.ts` and `core/src/index.ts`.
 - Grapher no longer refuses to save the map when the project's folder path mixes capitals and digits, like `/home/you/code/2024/FinalProject-Web`. The folder is now checked one folder name at a time, so a folder named like a key is still caught.
 
 ## [0.1.0] - 2026-10-18

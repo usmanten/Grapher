@@ -38,7 +38,7 @@ export function detectImports(ctx: AnalysisContext, builder: GraphBuilder): Pack
       const target = decl.getModuleSpecifierSourceFile();
       // Files without imports or exports are scripts, which TypeScript won't resolve as modules.
       const targetFile =
-        (target ? ctx.fileFor(target) : undefined) ?? resolveRelative(ctx, file, specifier);
+        (target ? ctx.fileFor(target) : undefined) ?? resolveFile(ctx, file, specifier);
 
       if (targetFile) {
         if (decl.getImportClause() === undefined) {
@@ -103,7 +103,10 @@ export function detectImports(ctx: AnalysisContext, builder: GraphBuilder): Pack
     for (const decl of file.source.getExportDeclarations()) {
       if (decl.isTypeOnly()) continue;
       const target = decl.getModuleSpecifierSourceFile();
-      const targetFile = target ? ctx.fileFor(target) : undefined;
+      const specifier = decl.getModuleSpecifierValue();
+      const targetFile =
+        (target ? ctx.fileFor(target) : undefined) ??
+        (specifier === undefined ? undefined : resolveFile(ctx, file, specifier));
       if (!targetFile) continue;
       builder.connect({
         from: file.nodeId,
@@ -119,7 +122,7 @@ export function detectImports(ctx: AnalysisContext, builder: GraphBuilder): Pack
       if (call.getExpression().getKind() !== SyntaxKind.ImportKeyword) continue;
       const arg = call.getArguments()[0];
       if (!arg?.isKind(SyntaxKind.StringLiteral)) continue;
-      const targetFile = resolveRelative(ctx, file, arg.getLiteralValue());
+      const targetFile = resolveFile(ctx, file, arg.getLiteralValue());
       if (!targetFile) continue;
       builder.connect({
         from: file.nodeId,
@@ -135,13 +138,19 @@ export function detectImports(ctx: AnalysisContext, builder: GraphBuilder): Pack
 
 const EXTENSIONS = ['', '.ts', '.tsx', '.js', '.jsx', '/index.ts', '/index.tsx', '/index.js'];
 
-/** Resolves a relative dynamic import to a project file. */
-function resolveRelative(
+/**
+ * Finds the project file an import leads to when the compiler didn't: a
+ * relative path, or another package of the same monorepo, like `@acme/ui/button`.
+ */
+function resolveFile(
   ctx: AnalysisContext,
   from: AnalyzedFile,
   specifier: string,
 ): AnalyzedFile | undefined {
-  if (!specifier.startsWith('.')) return undefined;
+  if (!specifier.startsWith('.')) {
+    const path = ctx.workspaces.resolve(specifier);
+    return path === undefined ? undefined : ctx.files.get(path);
+  }
   const parts = from.path.split('/').slice(0, -1);
   for (const part of specifier.split('/')) {
     if (part === '..') parts.pop();

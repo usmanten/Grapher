@@ -39,6 +39,8 @@ export interface Index {
   connections: Map<string, Connection>;
   /** Files nothing else in the code uses. See `unusedFiles`. */
   unused: Set<string>;
+  /** Each file's shortest name that no other file shares. See `shortPaths`. */
+  shortPaths: Map<string, string>;
 }
 
 export function indexGraph(graph: Graph): Index {
@@ -47,6 +49,7 @@ export function indexGraph(graph: Graph): Index {
     nodes: new Map(graph.nodes.map((n) => [n.id, n])),
     connections: new Map(graph.connections.map((c) => [c.id, c])),
     unused: unusedFiles(graph),
+    shortPaths: shortPaths(graph),
   };
 }
 
@@ -127,11 +130,37 @@ export function nodeName(node: GraphNode): string {
   }
 }
 
-/** A shorter name for sentences and headings: files by their last two path parts. */
-export function shortName(node: GraphNode): string {
+/**
+ * Short names for files, for sentences and headings: the last two parts of
+ * the path, plus as many folders as it takes to tell files apart. In a
+ * monorepo, `packages/cli/src/main.ts` and `packages/core/src/main.ts` become
+ * `cli/src/main.ts` and `core/src/main.ts` instead of both `src/main.ts`.
+ */
+export function shortPaths(graph: Graph): Map<string, string> {
+  const files = graph.nodes.filter((n): n is FileNode => n.kind === 'file');
+  const suffix = (parts: string[], length: number) => parts.slice(-length).join('/');
+  const counts = new Map<string, number>();
+  for (const file of files) {
+    const parts = file.path.split('/');
+    for (let length = 1; length <= parts.length; length++) {
+      const key = suffix(parts, length);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  }
+  const names = new Map<string, string>();
+  for (const file of files) {
+    const parts = file.path.split('/');
+    let length = Math.min(2, parts.length);
+    while (length < parts.length && (counts.get(suffix(parts, length)) ?? 0) > 1) length++;
+    names.set(file.id, suffix(parts, length));
+  }
+  return names;
+}
+
+/** A shorter name for sentences and headings. Files get their name from `shortPaths`. */
+export function shortName(index: Index, node: GraphNode): string {
   if (node.kind !== 'file') return nodeName(node);
-  const parts = node.path.split('/');
-  return parts.slice(-2).join('/');
+  return index.shortPaths.get(node.id) ?? node.path;
 }
 
 export function kindGroup(node: GraphNode): KindGroup {
@@ -197,8 +226,8 @@ export function describeConnection(index: Index, connection: Connection): string
   const from = index.nodes.get(connection.from);
   const to = index.nodes.get(connection.to);
   if (!from || !to) return '';
-  const a = shortName(from);
-  const b = shortName(to);
+  const a = shortName(index, from);
+  const b = shortName(index, to);
   switch (connection.kind) {
     case 'displays':
       return `${a} displays the ${b} component on screen.`;
@@ -309,7 +338,7 @@ export function layoutFor(index: Index, view: View, focus: string | undefined): 
     const set = new Set([...neighbors(index, id, 'in'), ...neighbors(index, id, 'out')]);
     const connections = index.graph.connections.filter((c) => set.has(c.from) && set.has(c.to));
     return {
-      title: `Full flow through ${shortName(node)}`,
+      title: `Full flow through ${shortName(index, node)}`,
       subtitle: 'Everything that leads here, and everything it leads to.',
       columns: rankColumns(set, connections).map((nodes) => ({ heading: '', nodes })),
       connections,
