@@ -96,6 +96,75 @@ describe('imports', () => {
   });
 });
 
+describe('monorepos', () => {
+  const pkg = (name: string, extra: Record<string, unknown> = {}) =>
+    JSON.stringify({ name, ...extra });
+
+  it("links imports of the workspace's own packages to their source files", async () => {
+    const graph = await graphOf({
+      'package.json': pkg('acme'),
+      'packages/core/package.json': pkg('@acme/core', {
+        exports: { '.': { types: './dist/index.d.ts', default: './dist/index.js' } },
+      }),
+      'packages/core/src/index.ts': "export { analyze } from './analyze.js';",
+      'packages/core/src/analyze.ts': 'export const analyze = () => 1;',
+      'packages/ui/package.json': pkg('@acme/ui', { exports: { './*': './src/*.tsx' } }),
+      'packages/ui/src/button.tsx': 'export const Button = () => null;',
+      'packages/cli/package.json': pkg('@acme/cli', { main: 'dist/main.js' }),
+      'packages/cli/src/main.ts': [
+        "import { analyze } from '@acme/core';",
+        "import { Button } from '@acme/ui/button';",
+        'analyze(); Button;',
+        "export const later = () => import('@acme/core');",
+      ].join('\n'),
+    });
+    expect(
+      connection(graph, 'file:packages/cli/src/main.ts', 'file:packages/core/src/index.ts')?.label,
+    ).toBe('uses analyze and it');
+    expect(
+      connection(graph, 'file:packages/cli/src/main.ts', 'file:packages/ui/src/button.tsx')?.label,
+    ).toBe('uses Button');
+    expect(
+      connection(graph, 'file:packages/core/src/index.ts', 'file:packages/core/src/analyze.ts'),
+    ).toBeDefined();
+    expect(graph.nodes.some((n) => n.kind === 'service')).toBe(false);
+    expect(graph.unknownPackages).toEqual([]);
+    expect(graph.project.name).toBe('acme');
+  });
+
+  it("follows code across packages, using each package's own dependencies", async () => {
+    const graph = await graphOf({
+      'packages/db/package.json': pkg('@acme/db', {
+        main: './src/index.ts',
+        dependencies: { '@supabase/supabase-js': '2.0.0' },
+      }),
+      'packages/db/src/index.ts':
+        "import { createClient } from '@supabase/supabase-js';\nexport const db = createClient('', '');",
+      'apps/web/package.json': pkg('web', { dependencies: { '@acme/db': 'workspace:*' } }),
+      'apps/web/lib/orders.ts': [
+        "import { db } from '@acme/db';",
+        "export const list = () => db.from('orders').select();",
+      ].join('\n'),
+    });
+    expect(
+      connection(graph, 'file:apps/web/lib/orders.ts', 'file:packages/db/src/index.ts'),
+    ).toBeDefined();
+    expect(connection(graph, 'file:apps/web/lib/orders.ts', 'database:supabase')?.label).toBe(
+      'reads from orders',
+    );
+  });
+
+  it('leaves package names it cannot match to a file as outside packages', async () => {
+    const graph = await graphOf({
+      'packages/empty/package.json': pkg('@acme/empty', { main: '../../outside.js' }),
+      'outside.ts': 'export const x = 1;',
+      'lib/a.ts': "import { x } from '@acme/empty';\nx;",
+    });
+    expect(connection(graph, 'file:lib/a.ts', 'file:outside.ts')).toBeUndefined();
+    expect(graph.unknownPackages).toEqual(['@acme/empty']);
+  });
+});
+
 describe('requests', () => {
   const routes: Tree = {
     'app/api/users/route.ts': 'export async function GET() {}\nexport async function POST() {}',

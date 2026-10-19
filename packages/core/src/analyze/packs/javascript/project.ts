@@ -5,6 +5,7 @@ import { ReadRefusedError, type SourceReader } from '../../../scan/reader.js';
 import type { ScanResult } from '../../../scan/types.js';
 import { fileNodeId } from '../../pack.js';
 import { fileRole, isTestFile } from './next.js';
+import { type WorkspacePackage, type Workspaces, workspaces } from './workspaces.js';
 
 export interface AnalyzedFile {
   path: string;
@@ -20,8 +21,10 @@ export interface AnalysisContext {
   files: Map<string, AnalyzedFile>;
   /** Looks up an analyzed file from a ts-morph source file. */
   fileFor(source: SourceFile): AnalyzedFile | undefined;
-  /** Dependencies declared in package.json. */
+  /** Dependencies declared in package.json, including every workspace package's. */
   dependencies: Set<string>;
+  /** The monorepo's own packages, which other packages import by name. */
+  workspaces: Workspaces;
   projectName: string;
   /** Files that could not be read or parsed, with a reason. */
   problems: { path: string; message: string }[];
@@ -41,28 +44,29 @@ async function readOptional(reader: SourceReader, scan: ScanResult, path: string
   }
 }
 
-interface PackageJson {
-  name?: unknown;
-  dependencies?: unknown;
-  devDependencies?: unknown;
-}
-
-function parsePackageJson(text: string | undefined) {
-  const dependencies = new Set<string>();
-  let name = '';
-  if (text === undefined) return { name, dependencies };
-  try {
-    const pkg = JSON.parse(text) as PackageJson;
-    if (typeof pkg.name === 'string') name = pkg.name;
-    for (const field of [pkg.dependencies, pkg.devDependencies]) {
-      if (field && typeof field === 'object') {
-        for (const dep of Object.keys(field)) dependencies.add(dep);
-      }
+/** Every package.json in the project, each read through the safe reader. */
+async function readPackages(scan: ScanResult, reader: SourceReader): Promise<WorkspacePackage[]> {
+  const packages: WorkspacePackage[] = [];
+  for (const file of scan.files) {
+    if (file.path !== 'package.json' && !file.path.endsWith('/package.json')) continue;
+    const text = await readOptional(reader, scan, file.path);
+    if (text === undefined) continue;
+    let manifest: unknown;
+    try {
+      manifest = JSON.parse(text);
+    } catch {
+      // A broken package.json shouldn't stop the analysis; we just learn less.
+      continue;
     }
-  } catch {
-    // A broken package.json shouldn't stop the analysis; we just learn less.
+    if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) continue;
+    const record = manifest as Record<string, unknown>;
+    packages.push({
+      name: typeof record.name === 'string' ? record.name : '',
+      dir: file.path.slice(0, -'package.json'.length).replace(/\/$/, ''),
+      manifest: record,
+    });
   }
-  return { name, dependencies };
+  return packages;
 }
 
 /**
@@ -88,6 +92,18 @@ function compilerPaths(text: string | undefined): ts.CompilerOptions {
   return result;
 }
 
+/**
+ * Adds the workspace packages to the compiler's path aliases, so the compiler
+ * itself follows `@acme/db` to its file. The project's own aliases win.
+ */
+function withWorkspacePaths(
+  options: ts.CompilerOptions,
+  workspace: Workspaces,
+): ts.CompilerOptions {
+  const paths = { ...workspace.compilerPaths(), ...options.paths };
+  return Object.keys(paths).length === 0 ? options : { ...options, paths };
+}
+
 function directiveOf(source: SourceFile): 'use client' | 'use server' | undefined {
   const first = source.getStatements()[0];
   if (first?.getKind() !== ts.SyntaxKind.ExpressionStatement) return undefined;
@@ -110,7 +126,10 @@ export async function loadProject(
   paths: readonly string[],
 ): Promise<AnalysisContext> {
   const problems: AnalysisContext['problems'] = [];
-  const pkg = parsePackageJson(await readOptional(reader, scan, 'package.json'));
+  const packages = await readPackages(scan, reader);
+  const root = packages.find((p) => p.dir === '');
+  const codePaths = new Set(paths);
+  const workspace = workspaces(packages, (path) => codePaths.has(path) && !isTestFile(path));
   const tsconfig =
     (await readOptional(reader, scan, 'tsconfig.json')) ??
     (await readOptional(reader, scan, 'jsconfig.json'));
@@ -125,7 +144,7 @@ export async function loadProject(
       moduleResolution: ts.ModuleResolutionKind.Bundler,
       target: ts.ScriptTarget.ES2022,
       noEmit: true,
-      ...compilerPaths(tsconfig),
+      ...withWorkspacePaths(compilerPaths(tsconfig), workspace),
     },
   });
 
@@ -159,8 +178,9 @@ export async function loadProject(
     files,
     fileFor: (source) =>
       byVirtualPath.get(source.getFilePath()) ?? files.get(fromVirtual(source.getFilePath())),
-    dependencies: pkg.dependencies,
-    projectName: pkg.name,
+    dependencies: workspace.dependencies,
+    workspaces: workspace,
+    projectName: root?.name ?? '',
     problems,
   };
 }
