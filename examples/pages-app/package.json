@@ -1,0 +1,14 @@
+{
+  "name": "pages-app",
+  "private": true,
+  "description": "A small Next.js Pages Router app used to test Grapher. It is never installed or run.",
+  "scripts": {
+    "dev": "next dev"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.0.0",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

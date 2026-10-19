@@ -2,6 +2,7 @@ import type { FileRole } from '../../../graph/types.js';
 
 const CODE_FILE = /\.(tsx?|jsx?|mts|cts|mjs|cjs)$/;
 const APP_DIR = /^(?:src\/)?app\//;
+const PAGES_DIR = /^(?:src\/)?pages\//;
 
 /** True for files Grapher parses: JavaScript and TypeScript, but not type declarations. */
 export function isCodeFile(path: string): boolean {
@@ -17,9 +18,9 @@ export function isInAppDir(path: string): boolean {
   return APP_DIR.test(path);
 }
 
-/** True for files in a Pages Router `pages/` folder, which Grapher doesn't map yet. */
-export function isPagesRouterFile(path: string): boolean {
-  return /^(?:src\/)?pages\//.test(path) && isCodeFile(path);
+/** True for files in a Pages Router `pages/` folder. */
+export function isInPagesDir(path: string): boolean {
+  return PAGES_DIR.test(path);
 }
 
 function fileStem(path: string): string {
@@ -27,12 +28,29 @@ function fileStem(path: string): string {
   return name.replace(/\.[^.]+$/, '');
 }
 
-/** Decides what a file does, from its path and whether it starts with a directive. */
+/**
+ * What a file in a Pages Router `pages/` folder is: `_app` and `_document`
+ * wrap every page, files under `pages/api/` are API routes, and every other
+ * file is a page.
+ */
+function pagesRouterRole(path: string): FileRole {
+  const inside = path.replace(PAGES_DIR, '');
+  if (/^(?:_app|_document)\.[^/]+$/.test(inside)) return 'layout';
+  return inside.startsWith('api/') ? 'route' : 'page';
+}
+
+/**
+ * Decides what a file does, from its path and whether it starts with a
+ * directive. `pagesRouter` is set for Next.js projects, so a `pages/` folder
+ * in another kind of app (like a Vite app's `src/pages/`) isn't read as routes.
+ */
 export function fileRole(
   path: string,
   directive: 'use client' | 'use server' | undefined,
+  pagesRouter = false,
 ): FileRole {
   const stem = fileStem(path);
+  if (pagesRouter && isInPagesDir(path)) return pagesRouterRole(path);
   if (isInAppDir(path)) {
     if (stem === 'page') return 'page';
     if (stem === 'layout' || stem === 'template') return 'layout';
@@ -45,10 +63,20 @@ export function fileRole(
 }
 
 /**
- * The URL a page or route answers. Route groups like `(marketing)` and
- * parallel route slots like `@modal` don't appear in the URL.
+ * The URL a page or route answers. In `app/`, the folder names make the URL,
+ * and route groups like `(marketing)` and parallel route slots like `@modal`
+ * don't appear in it. In `pages/`, the file name is the last part of the URL,
+ * and `index` stands for the folder itself.
  */
 export function urlPathFor(path: string): string {
+  if (isInPagesDir(path)) {
+    const segments = path
+      .replace(PAGES_DIR, '')
+      .replace(/\.[^./]+$/, '')
+      .split('/');
+    if (segments.at(-1) === 'index') segments.pop();
+    return `/${segments.join('/')}`;
+  }
   const segments = path.replace(APP_DIR, '').split('/').slice(0, -1);
   const visible = segments.filter(
     (s) => !(s.startsWith('(') && s.endsWith(')')) && !s.startsWith('@'),

@@ -29,6 +29,26 @@ describe('fileRole', () => {
   });
 });
 
+describe('fileRole in a Pages Router project', () => {
+  it.each([
+    ['pages/index.tsx', 'page'],
+    ['src/pages/blog/[slug].jsx', 'page'],
+    ['pages/_error.tsx', 'page'],
+    ['pages/_app.tsx', 'layout'],
+    ['src/pages/_document.js', 'layout'],
+    ['pages/api/users/[id].ts', 'route'],
+    ['pages/blog/_app.tsx', 'page'],
+    ['app/page.tsx', 'page'],
+    ['components/Nav.tsx', 'component'],
+  ] as const)('%s is a %s', (path, role) => {
+    expect(fileRole(path, undefined, true)).toBe(role);
+  });
+
+  it('ignores pages/ outside Next.js projects', () => {
+    expect(fileRole('src/pages/Home.tsx', undefined)).toBe('component');
+  });
+});
+
 describe('isCodeFile', () => {
   it('accepts source files and rejects declarations and other files', () => {
     expect(['a.ts', 'b.tsx', 'c.js', 'd.mjs', 'e.cts'].every(isCodeFile)).toBe(true);
@@ -45,6 +65,11 @@ describe('urlPathFor', () => {
     ['src/app/blog/[slug]/page.tsx', '/blog/[slug]'],
     ['app/(marketing)/about/page.tsx', '/about'],
     ['app/@modal/(.)photo/page.tsx', '/(.)photo'],
+    ['pages/index.tsx', '/'],
+    ['pages/about.tsx', '/about'],
+    ['src/pages/blog/index.jsx', '/blog'],
+    ['pages/blog/[...slug].tsx', '/blog/[...slug]'],
+    ['pages/api/users/[id].ts', '/api/users/[id]'],
   ])('%s answers %s', (path, url) => {
     expect(urlPathFor(path)).toBe(url);
   });

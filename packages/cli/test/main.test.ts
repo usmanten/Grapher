@@ -78,7 +78,7 @@ describe('grapher graph', () => {
     expect(out).toContain('1 setting (names only, never values)');
     expect(out).toContain('Saved .grapher/graph.json and .grapher/index.html');
     expect(out).toContain('file://');
-    expect(out).toContain('Note: No Next.js app/ folder was found');
+    expect(out).toContain('Note: No Next.js app/ or pages/ folder was found');
     expect(out).not.toContain('not-a-real-value');
     const saved = JSON.parse(await readFile(path.join(dir, '.grapher/graph.json'), 'utf8')) as {
       schemaVersion: number;

@@ -38,8 +38,8 @@ jobs:
       - run: pnpm test:coverage
       - name: Smoke test the CLI on this repository
         run: pnpm grapher scan .
-      - name: Smoke test the graph on the sample app
-        run: pnpm grapher graph examples/sample-app
+      - name: Smoke test the graph on the sample apps
+        run: pnpm grapher graph examples/sample-app && pnpm grapher graph examples/pages-app
       - name: Check that a project full of fake secrets produces clean output
         run: pnpm test:secrets
 
