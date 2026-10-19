@@ -1,4 +1,4 @@
-# 12. A full Python pack on Tree-sitter
+# 14. A full Python pack on Tree-sitter
 
 - Status: Accepted
 - Date: 2026-10-19
