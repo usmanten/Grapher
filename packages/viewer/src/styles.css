@@ -207,6 +207,29 @@ a:focus-visible {
   opacity: 0.8;
   overflow-wrap: anywhere;
 }
+.tree button.unused {
+  color: var(--muted);
+}
+.tree button.unused .dot {
+  background: var(--k-package);
+  opacity: 0.6;
+}
+.tree-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 10px 6px 0;
+  line-height: 1.45;
+}
+.tag {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 6px;
+  margin-left: auto;
+  flex: none;
+}
 .tree section + section {
   margin-top: 18px;
 }
@@ -316,6 +339,18 @@ a:focus-visible {
   background: color-mix(in srgb, var(--kc) 12%, var(--surface));
   border-width: 2px;
   border-color: var(--kc);
+}
+.box.unused {
+  --kc: var(--k-package);
+  opacity: 0.6;
+  border-style: dashed;
+}
+.box.unused.focus {
+  opacity: 1;
+}
+.box .tag {
+  justify-self: start;
+  margin: 2px 0 0;
 }
 .box.hl {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);

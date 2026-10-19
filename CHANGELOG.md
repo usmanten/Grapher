@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Files nothing in your code uses are shown faded in gray, with an "unused" tag in the file list and a note in the file view. Pages, routes, layouts, config files, scripts, tests and browser scripts are never marked, because Next.js, a tool or a web page starts them by name. Only JavaScript and TypeScript files are checked for now, since other languages get a basic map that can miss connections.
 - A basic map for projects in other languages: Grapher now shows which file uses which in Python, Java, Go, Rust, C and C++, Ruby and PHP code, read with Tree-sitter. Routes, databases, services and settings are still found in JavaScript and TypeScript only.
 
 ### Changed

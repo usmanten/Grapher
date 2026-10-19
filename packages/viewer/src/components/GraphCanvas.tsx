@@ -24,6 +24,7 @@ interface BoxData extends Record<string, unknown> {
   group: string;
   focused: boolean;
   highlighted: boolean;
+  unused: boolean;
 }
 
 interface HeadingData extends Record<string, unknown> {
@@ -34,7 +35,12 @@ type BoxNode = Node<BoxData, 'box'>;
 type HeadingNode = Node<HeadingData, 'heading'>;
 
 function Box({ data }: NodeProps<BoxNode>) {
-  const classes = ['box', data.focused ? 'focus' : '', data.highlighted ? 'hl' : '']
+  const classes = [
+    'box',
+    data.focused ? 'focus' : '',
+    data.highlighted ? 'hl' : '',
+    data.unused ? 'unused' : '',
+  ]
     .filter(Boolean)
     .join(' ');
   return (
@@ -42,6 +48,7 @@ function Box({ data }: NodeProps<BoxNode>) {
       <Handle type="target" position={Position.Left} isConnectable={false} />
       <span className="name">{data.name}</span>
       <span className="kind">{data.description}</span>
+      {data.unused && <span className="tag">nothing uses it</span>}
       <Handle type="source" position={Position.Right} isConnectable={false} />
     </div>
   );
@@ -94,6 +101,7 @@ export function GraphCanvas({
         const real = layout.copies?.[id] ?? id;
         const node = index.nodes.get(real);
         if (!node) return;
+        const unused = index.unused.has(real);
         result.push({
           id,
           type: 'box',
@@ -104,9 +112,10 @@ export function GraphCanvas({
             group: kindGroup(node),
             focused: showFocus && real === focus,
             highlighted: selectedConnection !== undefined && isEnd(selectedConnection.id, id),
+            unused,
           },
           draggable: false,
-          ariaLabel: `${nodeName(node)}, ${describeNode(node)}`,
+          ariaLabel: `${nodeName(node)}, ${describeNode(node)}${unused ? ', nothing uses it' : ''}`,
         });
       });
     });
