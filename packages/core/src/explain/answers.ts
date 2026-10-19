@@ -6,7 +6,7 @@ export const MAX_EXPLANATION_LENGTH = 600;
 export interface ParsedAnswers {
   /** Accepted explanations by connection id. */
   accepted: Record<string, string>;
-  /** Ids that were in the answer but not asked for, or had no usable text. */
+  /** Keys in the answer that weren't asked for, or had no usable text. */
   skipped: string[];
 }
 
@@ -21,32 +21,37 @@ export function cleanText(text: string): string {
 }
 
 /**
- * Reads Claude's answer. Only ids that were asked for are kept, each answer is
- * cleaned to plain text, and if anything in it looks like a secret the whole
- * answer is refused so nothing is saved.
+ * Reads Claude's answer, which maps each connection's number in the request
+ * to its explanation. Only numbers that were asked about are kept, each
+ * answer is cleaned to plain text, and if anything in it looks like a secret
+ * the whole answer is refused so nothing is saved.
+ *
+ * `requested` is the request in order (number 1 first); an undefined entry is
+ * a connection that changed since it was asked about, so its answer is skipped.
  */
-export function parseAnswers(raw: string, tasks: readonly ExplainTask[]): ParsedAnswers {
+export function parseAnswers(
+  raw: string,
+  requested: readonly (ExplainTask | undefined)[],
+): ParsedAnswers {
   let value: unknown;
   try {
     value = JSON.parse(raw);
   } catch {
-    throw new Error(
-      `The answer is not valid JSON. It should look like { "<id>": "<explanation>" }.`,
-    );
+    throw new Error(`The answer is not valid JSON. It should look like { "1": "<explanation>" }.`);
   }
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new Error(`The answer should be a JSON object like { "<id>": "<explanation>" }.`);
+    throw new Error(`The answer should be a JSON object like { "1": "<explanation>" }.`);
   }
-  const asked = new Set(tasks.map((t) => t.id));
   const accepted: Record<string, string> = {};
   const skipped: string[] = [];
-  for (const [id, text] of Object.entries(value)) {
+  for (const [key, text] of Object.entries(value)) {
+    const task = /^[1-9][0-9]*$/.test(key) ? requested[Number(key) - 1] : undefined;
     const clean = typeof text === 'string' ? cleanText(text) : '';
-    if (!asked.has(id) || clean === '') {
-      skipped.push(id);
+    if (!task || clean === '') {
+      skipped.push(key);
       continue;
     }
-    accepted[id] = clean;
+    accepted[task.id] = clean;
   }
   assertNoSecrets(accepted);
   return { accepted, skipped };

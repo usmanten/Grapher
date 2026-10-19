@@ -15,8 +15,10 @@ import {
   identifyPrompt,
   loadCache,
   MAX_EXPLANATION_LENGTH,
+  nextBatch,
   parseAnswers,
   parseIdentified,
+  REQUEST_BUDGET,
   saveCache,
 } from '../src/index.js';
 import { FAKE_SECRET, makeProject } from './helpers.js';
@@ -101,13 +103,37 @@ describe('explainPrompt', () => {
     const data = prompt
       .split(`${markers[0]?.[1] ?? ''} BEGIN\n`)[1]
       ?.split(`\n${markers[0]?.[1] ?? ''} END`)[0];
-    expect(JSON.parse(data ?? '')).toEqual(tasks);
+    // Numbered, without Grapher's own ids and fingerprints.
+    expect(JSON.parse(data ?? '')).toEqual([
+      {
+        n: 1,
+        from: 'app/page.tsx (page for /)',
+        to: 'lib/db.ts (module)',
+        label: 'uses db',
+        code: [`app/page.tsx:3: ${injected}`],
+      },
+    ]);
     expect(prompt).toContain('Then run: grapher explain --save');
   });
 
   it('mentions how many connections are left', () => {
     const tasks = explainTasks(graphWith('x()'), emptyCache());
     expect(explainPrompt(tasks, 41, 'save')).toContain('40 more connections are waiting');
+  });
+
+  it('fits as many connections as the size budget allows, and at least one', () => {
+    const one = explainTasks(graphWith('x()'), emptyCache());
+    const many = Array.from({ length: 500 }, (_, i) =>
+      one.map((t) => ({ ...t, id: `${t.id}${String(i)}` })),
+    ).flat();
+    const batch = nextBatch(many);
+    expect(batch.length).toBeGreaterThan(40);
+    expect(batch.length).toBeLessThan(500);
+    const data = explainPrompt(batch, many.length, 'save');
+    expect(data.length).toBeLessThan(REQUEST_BUDGET + 3000);
+
+    const huge = explainTasks(graphWith('y'.repeat(REQUEST_BUDGET * 2)), emptyCache());
+    expect(nextBatch(huge)).toHaveLength(1);
   });
 
   it('refuses to build a request that contains a secret', () => {
@@ -120,19 +146,26 @@ describe('parseAnswers', () => {
   const tasks = explainTasks(graphWith('db.user.findMany()'), emptyCache());
   const id = tasks[0]?.id ?? '';
 
-  it('keeps answers for connections that were asked about, as clean text', () => {
+  it('keeps answers for the numbers that were asked about, as clean text', () => {
     const raw = JSON.stringify({
-      [id]: '  The page\nloads users.\u0007\u202e ',
+      1: '  The page\nloads users.\u0007\u202e ',
+      2: 'x',
+      '01': 'x',
       other: 'x',
-      [`${id}2`]: 3,
     });
     const { accepted, skipped } = parseAnswers(raw, tasks);
     expect(accepted).toEqual({ [id]: 'The page loads users.' });
-    expect(skipped.sort()).toEqual([`${id}2`, 'other']);
+    expect(skipped.sort()).toEqual(['01', '2', 'other']);
+  });
+
+  it('skips answers for connections that changed since the request', () => {
+    const { accepted, skipped } = parseAnswers(JSON.stringify({ 1: 'Old.' }), [undefined]);
+    expect(accepted).toEqual({});
+    expect(skipped).toEqual(['1']);
   });
 
   it('caps long answers', () => {
-    const { accepted } = parseAnswers(JSON.stringify({ [id]: 'word '.repeat(300) }), tasks);
+    const { accepted } = parseAnswers(JSON.stringify({ 1: 'word '.repeat(300) }), tasks);
     expect(accepted[id]).toHaveLength(MAX_EXPLANATION_LENGTH);
   });
 
@@ -142,7 +175,7 @@ describe('parseAnswers', () => {
   });
 
   it('refuses the whole answer if any of it looks like a secret', () => {
-    const raw = JSON.stringify({ [id]: `It uses the key ${FAKE_SECRET}.` });
+    const raw = JSON.stringify({ 1: `It uses the key ${FAKE_SECRET}.` });
     expect(() => parseAnswers(raw, tasks)).toThrow('looks like a secret');
   });
 });
