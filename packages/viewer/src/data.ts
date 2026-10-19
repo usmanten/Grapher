@@ -1,6 +1,7 @@
 import type { Connection, Graph, GraphNode, ViewerData } from '@grapher/core';
 
 const NODE_KINDS = new Set(['file', 'database', 'service', 'setting']);
+const FRAMEWORKS = new Set<unknown>(['next-app-router', 'next-pages-router']);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -54,7 +55,9 @@ export function parseViewerData(raw: unknown): ViewerData | undefined {
     schemaVersion: 1,
     project: {
       name: typeof project.name === 'string' ? project.name : 'project',
-      framework: project.framework === 'next-app-router' ? 'next-app-router' : 'unknown',
+      framework: FRAMEWORKS.has(project.framework)
+        ? (project.framework as Graph['project']['framework'])
+        : 'unknown',
     },
     nodes,
     connections,

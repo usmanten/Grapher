@@ -114,6 +114,10 @@ export async function loadProject(
   const tsconfig =
     (await readOptional(reader, scan, 'tsconfig.json')) ??
     (await readOptional(reader, scan, 'jsconfig.json'));
+  // Other apps (like Vite ones) also keep screens in a pages/ folder, so it
+  // only counts as the Pages Router in a Next.js project.
+  const nextProject =
+    pkg.dependencies.has('next') || scan.files.some((f) => /^next\.config\.[^/]+$/.test(f.path));
 
   const project = new Project({
     useInMemoryFileSystem: true,
@@ -145,7 +149,7 @@ export async function loadProject(
     const file: AnalyzedFile = {
       path,
       nodeId: fileNodeId(path),
-      role: fileRole(path, directive),
+      role: fileRole(path, directive, nextProject),
       source,
       client: directive === 'use client',
     };

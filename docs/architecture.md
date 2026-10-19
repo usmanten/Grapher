@@ -56,7 +56,7 @@ Code is read by **language packs** (see [ADR 0010](decisions/0010-language-packs
 **JavaScript and TypeScript (`packs/javascript`)**
 
 - **`project.ts`** loads every approved code file through the safe reader into a ts-morph project that lives only in memory (see [ADR 0006](decisions/0006-in-memory-parsing.md)). Path aliases come from `tsconfig.json` or `jsconfig.json`; `extends` is not followed.
-- **`next.ts`** knows the App Router conventions: which files are pages, layouts and routes, and which URL a route answers (route groups like `(marketing)` and `@slots` are dropped).
+- **`next.ts`** knows the Next.js conventions for both routers: which files are pages, layouts and routes, and which URL each answers. In `app/`, folder names make the URL (route groups like `(marketing)` and `@slots` are dropped). In `pages/`, the file name does, `index` stands for its folder, `_app` and `_document` are layouts, and `pages/api/` holds API routes. `pages/` only counts when the project uses Next.js (see [ADR 0012](decisions/0012-pages-router.md)).
 - **`detectors/`** each look for one kind of connection: `imports`, `requests` (fetch, axios, ky), `navigation` (links, redirects and return addresses that open one of the app's pages), `settings` (`process.env`), `packages` (known services and databases), and `databases` (Prisma, Drizzle, Supabase tables and whether code reads, saves or deletes, plus Supabase database functions).
 
 **Other languages (`packs/basic`)**
@@ -121,4 +121,4 @@ Paths are relative and use forward slashes on every platform, so output is stabl
 
 - **Nodes** are files (with a role such as page, route or component, and a URL for pages and routes), databases, outside services, and settings (a name and whether it is public, never a value).
 - **Connections** go from the code doing the action to what it uses. Each has a kind, a plain-word label, optional details (tables or HTTP methods) and up to five `path:line` locations.
-- **Warnings** flag things like a Pages Router project or a file that failed to parse, and `unknownPackages` lists packages nobody has identified yet, by name only.
+- **Warnings** flag things like a project with no Next.js `app/` or `pages/` folder or a file that failed to parse, and `unknownPackages` lists packages nobody has identified yet, by name only.

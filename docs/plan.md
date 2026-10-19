@@ -33,7 +33,7 @@ You type `/grapher` in Claude Code inside a Next.js project. Grapher maps how th
    - server actions and server components that read the database directly
    - database code, in three layers: (a) detailed detectors for **Prisma, Drizzle and Supabase** that know the table and whether code reads or writes; (b) a lookup list of known database and service packages (`pg`, `mongodb`, `mongoose`, `redis`, `firebase`, `stripe`, `openai`, `resend`…) that become simpler boxes; (c) any unknown package gets sent to Claude once, by name only, to classify, and is marked "identified by AI"
    - outside services: found the same way, from their SDK imports
-   - App Router first. If a `pages/` folder is found, Grapher says Pages Router isn't fully supported yet. Pages Router support comes soon after.
+   - App Router first, then the Pages Router (`pages/` and `pages/api/`), which is now supported too.
    - testing uses a sample Next.js app that we build (it lives in the repo as a test fixture)
    - settings: `process.env.X` recorded as the name `X` only
 4. **Build the graph.** Save it as `.grapher/graph.json`, with nodes, connections, and file:line for each connection.

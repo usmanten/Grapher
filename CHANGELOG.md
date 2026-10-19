@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Pages Router support. Files in `pages/` are mapped as pages at their URL (`pages/blog/index.tsx` is `/blog`), `_app` and `_document` as layouts, and files in `pages/api/` as API routes, with the HTTP methods each one checks `req.method` for. Links, `router.push` and `fetch` calls connect to them like App Router pages and routes. A `pages/` folder only counts in a Next.js project, so a Vite app's `src/pages/` stays plain files. A Pages Router example lives in `examples/pages-app`.
 - Files nothing in your code uses are shown faded in gray, with an "unused" tag in the file list and a note in the file view. Pages, routes, layouts, config files, scripts, tests and browser scripts are never marked, because Next.js, a tool or a web page starts them by name. Only JavaScript and TypeScript files are checked for now, since other languages get a basic map that can miss connections.
 - A basic map for projects in other languages: Grapher now shows which file uses which in Python, Java, Go, Rust, C and C++, Ruby and PHP code, read with Tree-sitter. Routes, databases, services and settings are still found in JavaScript and TypeScript only.
 
@@ -15,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Explanations are written about twice as fast and at about half the cost. A first run on Grapher's own code went from about 97 to 53 seconds, and on a 152-connection Next.js site from about 116 to 62 seconds. Requests now hold as many connections as fit on Claude Code's screen, number them instead of repeating long ids, and each save prints the next request straight away.
 - Code is now read through language packs, one per language, so adding a language no longer means changing the rest of Grapher. The JavaScript and TypeScript reader is the first pack, and its maps are unchanged.
-- The "No Next.js app/ folder" warning is no longer shown for projects that have no JavaScript or TypeScript files.
+- The Pages Router warning is gone, and the "No Next.js app/ folder" warning now reads "No Next.js app/ or pages/ folder" (its code in `graph.json` is now `no-next-router`). It is no longer shown for projects that have no JavaScript or TypeScript files.
 
 ### Fixed
 

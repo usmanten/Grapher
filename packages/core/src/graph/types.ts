@@ -4,7 +4,10 @@
  */
 export const GRAPH_SCHEMA_VERSION = 1;
 
-/** What a file does in a Next.js app, decided from its path and contents. */
+/**
+ * What a file does in a Next.js app, decided from its path and contents.
+ * Pages Router `_app` and `_document` files are layouts.
+ */
 export type FileRole =
   'page' | 'layout' | 'route' | 'middleware' | 'server-actions' | 'component' | 'module' | 'config';
 
@@ -99,7 +102,7 @@ export interface Connection {
 }
 
 export interface GraphWarning {
-  code: 'pages-router' | 'no-app-router' | 'truncated' | 'parse-error';
+  code: 'no-next-router' | 'truncated' | 'parse-error';
   message: string;
 }
 
@@ -107,7 +110,7 @@ export interface Graph {
   schemaVersion: typeof GRAPH_SCHEMA_VERSION;
   project: {
     name: string;
-    framework: 'next-app-router' | 'unknown';
+    framework: 'next-app-router' | 'next-pages-router' | 'unknown';
   };
   nodes: GraphNode[];
   connections: Connection[];

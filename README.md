@@ -11,7 +11,7 @@ Modern tools make it easy to generate a lot of code quickly. Understanding how a
 
 It is built for students and anyone still learning how real projects are structured.
 
-> **Status:** v0.1.0, the first release. Grapher maps Next.js App Router projects (with or without a `src/` folder) written in TypeScript or JavaScript. It has been tried on a real store built with Stripe, Supabase, Shippo and Resend. See [what it supports](#what-it-supports) and the [roadmap](#roadmap).
+> **Status:** v0.1.0, the first release. Grapher maps Next.js projects, App Router or Pages Router (with or without a `src/` folder), written in TypeScript or JavaScript. It has been tried on a real store built with Stripe, Supabase, Shippo and Resend. See [what it supports](#what-it-supports) and the [roadmap](#roadmap).
 
 ![Grapher's file view, showing the users API route, what calls it, and what it uses](docs/images/viewer-file-view.png)
 
@@ -76,13 +76,13 @@ Scanned /home/you/my-app
     3 dependency and build folders: .next, node_modules, out
 ```
 
-Add `--json` to either command for machine-readable output. Try it on the included sample app with `pnpm grapher graph examples/sample-app`.
+Add `--json` to either command for machine-readable output. Try it on the included sample apps with `pnpm grapher graph examples/sample-app` (App Router) or `pnpm grapher graph examples/pages-app` (Pages Router).
 
 ## What it supports
 
 | It finds                   | For example                                                                                                                      |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Pages, layouts, API routes | `app/page.tsx`, `app/api/users/route.ts` and the HTTP methods each route handles                                                 |
+| Pages, layouts, API routes | `app/page.tsx`, `app/api/users/route.ts`, `pages/about.tsx`, `pages/api/users.ts` and the HTTP methods each route handles        |
 | Components a page displays | `<SignupForm />` in a page                                                                                                       |
 | Links between pages        | `<Link href="/about">`, `router.push`, `redirect()`, a Stripe checkout's `success_url`                                           |
 | Calls to your API routes   | `fetch('/api/users', { method: 'POST' })`, axios, ky                                                                             |
@@ -92,8 +92,6 @@ Add `--json` to either command for machine-readable output. Try it on the includ
 | Settings                   | `process.env.STRIPE_SECRET_KEY`, by name only                                                                                    |
 
 Other languages get a basic map: for Python, Java, Go, Rust, C and C++, Ruby and PHP, Grapher shows which file uses which, but not yet routes, databases, services or settings.
-
-Not yet supported: the Pages Router (`pages/`, Grapher shows a warning).
 
 ## How it works
 
@@ -135,8 +133,9 @@ See [SECURITY.md](SECURITY.md) and the [threat model](docs/threat-model.md) for 
 - [x] Snippet scrubbing and a final output safety check
 - [x] Tried on a real project, with page links, Supabase functions and AI-identified packages added from what it found
 - [x] v0.1.0 release
+- [x] Pages Router support
 
-Next: publishing to npm, marking files nothing uses, Pages Router support, Python projects, a "what changed since the last commit" view, and watch mode.
+Next: publishing to npm, marking files nothing uses, Python projects, a "what changed since the last commit" view, and watch mode.
 
 ## Contributing
 

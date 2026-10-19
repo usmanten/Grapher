@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { analyzeProject, type Connection, type Graph } from '../src/index.js';
+import { analyzeProject, type Connection, type FileNode, type Graph } from '../src/index.js';
 import { FAKE_SECRET, makeProject, type Tree } from './helpers.js';
 
 const cleanups: (() => Promise<void>)[] = [];
@@ -362,11 +362,123 @@ describe('databases', () => {
   });
 });
 
-describe('framework detection', () => {
-  it('warns about Pages Router projects and projects without app/', async () => {
-    const graph = await graphOf({ 'pages/index.tsx': 'export default function Home() {}' });
+const NEXT_PACKAGE = JSON.stringify({ name: 'shop', dependencies: { next: '15.0.0' } });
+
+function fileNode(graph: Graph, path: string): FileNode | undefined {
+  return graph.nodes.find((n): n is FileNode => n.kind === 'file' && n.path === path);
+}
+
+describe('Pages Router', () => {
+  it('maps pages, layouts and API routes in pages/', async () => {
+    const graph = await graphOf({
+      'package.json': NEXT_PACKAGE,
+      'pages/_app.tsx': 'export default function App({ Component }) { return <Component />; }',
+      'pages/_document.tsx': 'export default function Document() { return null; }',
+      'pages/index.tsx': 'export default function Home() { return null; }',
+      'pages/blog/index.tsx': 'export default function Blog() { return null; }',
+      'pages/blog/[slug].tsx': 'export default function Post() { return null; }',
+      'pages/404.tsx': 'export default function Missing() { return null; }',
+      'pages/api/posts/index.ts': [
+        'export default function handler(req, res) {',
+        '  switch (req.method) {',
+        "    case 'GET': return res.json([]);",
+        "    case 'POST': return res.status(201).end();",
+        '  }',
+        '}',
+      ].join('\n'),
+      'pages/api/posts/[id].ts': [
+        'export default function handler(req, res) {',
+        "  if (req.method !== 'DELETE') return res.status(405).end();",
+        '  res.end();',
+        '}',
+      ].join('\n'),
+      'pages/api/health.ts': [
+        'export default function handler(req, res) {',
+        "  if (!['get', 'HEAD'].includes(req.method)) return res.status(405).end();",
+        '  res.end();',
+        '}',
+      ].join('\n'),
+      'pages/api/any.ts': 'export default function handler(req, res) { res.end(); }',
+    });
+    expect(graph.project.framework).toBe('next-pages-router');
+    expect(graph.warnings).toEqual([]);
+    const summary = (path: string) => {
+      const node = fileNode(graph, path);
+      return [node?.role, node?.urlPath, node?.methods];
+    };
+    expect(summary('pages/_app.tsx')).toEqual(['layout', undefined, undefined]);
+    expect(summary('pages/_document.tsx')).toEqual(['layout', undefined, undefined]);
+    expect(summary('pages/index.tsx')).toEqual(['page', '/', undefined]);
+    expect(summary('pages/blog/index.tsx')).toEqual(['page', '/blog', undefined]);
+    expect(summary('pages/blog/[slug].tsx')).toEqual(['page', '/blog/[slug]', undefined]);
+    expect(summary('pages/404.tsx')).toEqual(['page', '/404', undefined]);
+    expect(summary('pages/api/posts/index.ts')).toEqual(['route', '/api/posts', ['GET', 'POST']]);
+    expect(summary('pages/api/posts/[id].ts')).toEqual(['route', '/api/posts/[id]', ['DELETE']]);
+    expect(summary('pages/api/health.ts')).toEqual(['route', '/api/health', ['GET', 'HEAD']]);
+    expect(summary('pages/api/any.ts')).toEqual(['route', '/api/any', []]);
+  });
+
+  it('connects links, router calls and requests to pages/ routes', async () => {
+    const graph = await graphOf({
+      'package.json': NEXT_PACKAGE,
+      'src/pages/index.tsx': [
+        "import Link from 'next/link';",
+        "import { useRouter } from 'next/router';",
+        'export default function Home({ id }) {',
+        '  const router = useRouter();',
+        "  const save = () => fetch(`/api/posts/${id}`, { method: 'DELETE' });",
+        "  const done = () => router.push('/blog/hello');",
+        '  return <Link href="/about">About</Link>;',
+        '}',
+      ].join('\n'),
+      'src/pages/about.tsx': 'export default function About() { return null; }',
+      'src/pages/blog/[slug].tsx': 'export default function Post() { return null; }',
+      'src/pages/api/posts/[id].ts':
+        "export default function handler(req, res) { if (req.method === 'DELETE') res.end(); }",
+    });
+    const home = 'file:src/pages/index.tsx';
+    expect(connection(graph, home, 'file:src/pages/about.tsx')?.kind).toBe('links');
+    expect(connection(graph, home, 'file:src/pages/blog/[slug].tsx')?.kind).toBe('links');
+    const request = connection(graph, home, 'file:src/pages/api/posts/[id].ts');
+    expect([request?.kind, request?.details]).toEqual(['requests', ['DELETE']]);
+  });
+
+  it('recognizes a Next.js project from next.config without a package.json', async () => {
+    const graph = await graphOf({
+      'next.config.mjs': 'export default {};',
+      'pages/index.jsx': 'export default function Home() { return null; }',
+    });
+    expect(graph.project.framework).toBe('next-pages-router');
+    expect(fileNode(graph, 'pages/index.jsx')?.role).toBe('page');
+  });
+
+  it('leaves a pages/ folder alone in apps that are not Next.js', async () => {
+    const graph = await graphOf({
+      'package.json': JSON.stringify({ dependencies: { vite: '7.0.0' } }),
+      'src/pages/Home.tsx': 'export default function Home() { return null; }',
+    });
+    expect(fileNode(graph, 'src/pages/Home.tsx')?.role).toBe('component');
     expect(graph.project.framework).toBe('unknown');
-    expect(graph.warnings.map((w) => w.code)).toEqual(['pages-router', 'no-app-router']);
+    expect(graph.warnings.map((w) => w.code)).toEqual(['no-next-router']);
+  });
+
+  it('maps both folders in a project moving from pages/ to app/', async () => {
+    const graph = await graphOf({
+      'package.json': NEXT_PACKAGE,
+      'app/dashboard/page.tsx': 'export default function Dashboard() { return null; }',
+      'pages/index.tsx': 'export default function Home() { return null; }',
+    });
+    expect(graph.project.framework).toBe('next-app-router');
+    expect(fileNode(graph, 'app/dashboard/page.tsx')?.urlPath).toBe('/dashboard');
+    expect(fileNode(graph, 'pages/index.tsx')?.urlPath).toBe('/');
+  });
+});
+
+describe('framework detection', () => {
+  it('warns about projects without app/ or pages/', async () => {
+    const graph = await graphOf({ 'lib/index.ts': 'export const x = 1;' });
+    expect(graph.project.framework).toBe('unknown');
+    expect(graph.warnings.map((w) => w.code)).toEqual(['no-next-router']);
   });
 
   it('warns when the scan was cut short', async () => {

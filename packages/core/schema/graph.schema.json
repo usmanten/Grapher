@@ -14,7 +14,7 @@
       "required": ["name", "framework"],
       "properties": {
         "name": { "type": "string" },
-        "framework": { "enum": ["next-app-router", "unknown"] }
+        "framework": { "enum": ["next-app-router", "next-pages-router", "unknown"] }
       }
     },
     "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
@@ -27,7 +27,7 @@
         "additionalProperties": false,
         "required": ["code", "message"],
         "properties": {
-          "code": { "enum": ["pages-router", "no-app-router", "truncated", "parse-error"] },
+          "code": { "enum": ["no-next-router", "truncated", "parse-error"] },
           "message": { "type": "string" }
         }
       }
