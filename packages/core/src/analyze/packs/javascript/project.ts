@@ -1,9 +1,10 @@
 import { Project, type SourceFile, ts } from 'ts-morph';
 
-import type { FileRole } from '../graph/types.js';
-import { ReadRefusedError, type SourceReader } from '../scan/reader.js';
-import type { ScanResult } from '../scan/types.js';
-import { fileRole, isCodeFile, isTestFile } from './next.js';
+import type { FileRole } from '../../../graph/types.js';
+import { ReadRefusedError, type SourceReader } from '../../../scan/reader.js';
+import type { ScanResult } from '../../../scan/types.js';
+import { fileNodeId } from '../../pack.js';
+import { fileRole, isTestFile } from './next.js';
 
 export interface AnalyzedFile {
   path: string;
@@ -29,8 +30,6 @@ export interface AnalysisContext {
 /** Virtual root for the in-memory file system: `/app/page.tsx`, `/lib/db.ts`, ... */
 const toVirtual = (path: string) => `/${path}`;
 const fromVirtual = (path: string) => path.replace(/^\//, '');
-
-export const fileNodeId = (path: string) => `file:${path}`;
 
 async function readOptional(reader: SourceReader, scan: ScanResult, path: string) {
   if (!scan.files.some((f) => f.path === path)) return undefined;
@@ -99,7 +98,7 @@ function directiveOf(source: SourceFile): 'use client' | 'use server' | undefine
 }
 
 /**
- * Loads the project's code into ts-morph through the safe reader.
+ * Loads the given code files into ts-morph through the safe reader.
  *
  * ts-morph runs on an in-memory file system holding only the files the
  * scanner approved, so the TypeScript compiler can't read anything else
@@ -108,6 +107,7 @@ function directiveOf(source: SourceFile): 'use client' | 'use server' | undefine
 export async function loadProject(
   scan: ScanResult,
   reader: SourceReader,
+  paths: readonly string[],
 ): Promise<AnalysisContext> {
   const problems: AnalysisContext['problems'] = [];
   const pkg = parsePackageJson(await readOptional(reader, scan, 'package.json'));
@@ -131,8 +131,8 @@ export async function loadProject(
 
   const files = new Map<string, AnalyzedFile>();
   const byVirtualPath = new Map<string, AnalyzedFile>();
-  for (const { path } of scan.files) {
-    if (!isCodeFile(path) || isTestFile(path)) continue;
+  for (const path of paths) {
+    if (isTestFile(path)) continue;
     let text: string;
     try {
       text = await reader.read(path);

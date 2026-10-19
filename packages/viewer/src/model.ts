@@ -69,15 +69,25 @@ const RUN_DIRECTLY = [
   /(?:^|\/)(?:scripts|bin|e2e|tests?|__tests__|__mocks__)\//,
   /(?:^|\/)seed\.[^/]+$/,
   /\.(?:test|spec|stories)\.[^/]+$/,
+  // Browser scripts a web page loads with a <script> tag, not an import.
+  /(?:^|\/)(?:public|static|assets|resources)\//,
+  /\.min\.js$/,
 ];
+
+// Only JavaScript and TypeScript are read closely enough to trust "nothing
+// uses it". Other languages get a basic map that misses links like Java
+// classes in the same package or Go files in the same folder.
+const FULLY_READ = /\.(?:[cm]?[jt]sx?)$/;
 
 /**
  * True for files that are meant to be started from outside the code, so it's
- * normal that nothing imports them: pages, routes, layouts, config, scripts and
- * tests.
+ * normal that nothing imports them: pages, routes, layouts, config, scripts,
+ * tests and browser scripts. Files in other languages count too, because
+ * Grapher can't yet tell for sure that nothing uses them.
  */
 export function isEntryPoint(node: FileNode): boolean {
   return (
+    !FULLY_READ.test(node.path) ||
     ENTRY_ROLES.has(node.role) ||
     NEXT_SPECIAL_FILE.test(node.path) ||
     RUN_DIRECTLY.some((pattern) => pattern.test(node.path))
@@ -85,8 +95,8 @@ export function isEntryPoint(node: FileNode): boolean {
 }
 
 /**
- * Files nothing else uses: no other file imports, displays, requests or links
- * to them, and they aren't an entry point. Code loaded in ways Grapher can't
+ * JavaScript and TypeScript files nothing else uses: no other file imports,
+ * displays, requests or links to them, and they aren't an entry point. Code loaded in ways Grapher can't
  * see (like a path built at runtime) can still show up here, so the viewer
  * calls these "unused", not "safe to delete".
  */

@@ -272,6 +272,12 @@ describe('unused files', () => {
       file('prisma/seed.ts', 'module'),
       file('tests/helpers.ts', 'module'),
       file('components/Button.stories.tsx'),
+      file('public/analytics.js', 'module'),
+      file('static/js/chart.min.js', 'module'),
+      // Other languages only get a basic map, so they are never marked.
+      file('src/main/java/com/shop/OrderController.java', 'module'),
+      file('cmd/api/routes.go', 'module'),
+      file('app/views.py', 'module'),
     ];
     for (const entry of entries) expect(isEntryPoint(entry), entry.path).toBe(true);
     expect(unusedFiles({ ...graph, nodes: entries, connections: [] }).size).toBe(0);
