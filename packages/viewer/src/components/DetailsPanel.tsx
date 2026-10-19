@@ -28,7 +28,7 @@ export function DetailsPanel({ index, root, explanations, selected }: Props) {
     <aside className="pane explain" aria-live="polite" aria-label="Explanation">
       <h2>Explanation</h2>
       <h3>
-        <code>{shortName(from)}</code> → <code>{shortName(to)}</code>
+        <code>{shortName(index, from)}</code> → <code>{shortName(index, to)}</code>
       </h3>
       <span className="verb">{connection.label}</span>
       {Object.hasOwn(explanations, connection.id) ? (
