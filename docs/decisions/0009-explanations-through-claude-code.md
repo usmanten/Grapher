@@ -15,7 +15,7 @@ Each connection needs a short plain-English explanation. Parsing finds the conne
 - The data is JSON between two marker lines that contain a random value, and both the request and the command tell Claude to treat it as data. Code can't close the data block early because it can't guess the marker.
 - Answers are only accepted for connections that were asked about, are cleaned to plain text of at most 600 characters, and are refused in full if anything looks like a secret.
 - Explanations are cached in `.grapher/explanations.json` under a fingerprint of the connection, so only new or changed connections are explained again.
-- Requests are sent in batches of 40, so each answer stays small and a failure only costs one batch. (Changed in [ADR 0010](0010-fewer-steps-for-explanations.md): batches are now sized to fit Claude Code's output limit.)
+- Requests are sent in batches of 40, so each answer stays small and a failure only costs one batch. (Changed in [ADR 0011](0011-fewer-steps-for-explanations.md): batches are now sized to fit Claude Code's output limit.)
 
 We considered calling the Claude API directly (needs an API key, and code would leave the machine through Grapher itself) and asking Claude to edit `graph.json` (hard to validate and easy to corrupt).
 

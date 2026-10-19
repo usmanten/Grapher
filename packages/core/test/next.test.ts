@@ -6,7 +6,7 @@ import {
   matchRoute,
   UNKNOWN_SEGMENT,
   urlPathFor,
-} from '../src/analyze/next.js';
+} from '../src/analyze/packs/javascript/next.js';
 
 describe('fileRole', () => {
   it.each([

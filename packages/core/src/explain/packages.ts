@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 
 import type { IdentifiedPackage } from '../analyze/known-packages.js';
-import { packageName } from '../analyze/detectors/shared.js';
+import { packageName } from '../analyze/packs/javascript/detectors/shared.js';
 import { readOutputFile, writeOutputFile } from '../output/write.js';
 import { assertNoSecrets } from '../safety/check.js';
 import { cleanText } from './answers.js';

@@ -1,4 +1,4 @@
-import type { FileRole } from '../graph/types.js';
+import type { FileRole } from '../../../graph/types.js';
 
 const CODE_FILE = /\.(tsx?|jsx?|mts|cts|mjs|cjs)$/;
 const APP_DIR = /^(?:src\/)?app\//;

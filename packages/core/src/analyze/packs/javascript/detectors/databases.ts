@@ -1,7 +1,7 @@
 import { type CallExpression, type Node, SyntaxKind } from 'ts-morph';
 
-import type { DbOperation, GraphBuilder } from '../builder.js';
-import { pluralize } from '../labels.js';
+import type { DbOperation, GraphBuilder } from '../../../builder.js';
+import { pluralize } from '../../../labels.js';
 import type { AnalysisContext, AnalyzedFile } from '../project.js';
 import { at, chainRoot, declarationOf, stringValue } from './shared.js';
 

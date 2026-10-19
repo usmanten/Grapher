@@ -6,9 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- A basic map for projects in other languages: Grapher now shows which file uses which in Python, Java, Go, Rust, C and C++, Ruby and PHP code, read with Tree-sitter. Routes, databases, services and settings are still found in JavaScript and TypeScript only.
+
 ### Changed
 
 - Explanations are written about twice as fast and at about half the cost. A first run on Grapher's own code went from about 97 to 53 seconds, and on a 152-connection Next.js site from about 116 to 62 seconds. Requests now hold as many connections as fit on Claude Code's screen, number them instead of repeating long ids, and each save prints the next request straight away.
+- Code is now read through language packs, one per language, so adding a language no longer means changing the rest of Grapher. The JavaScript and TypeScript reader is the first pack, and its maps are unchanged.
+- The "No Next.js app/ folder" warning is no longer shown for projects that have no JavaScript or TypeScript files.
 
 ### Fixed
 

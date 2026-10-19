@@ -1,6 +1,6 @@
 import { SyntaxKind } from 'ts-morph';
 
-import type { GraphBuilder } from '../builder.js';
+import type { GraphBuilder } from '../../../builder.js';
 import type { AnalysisContext, AnalyzedFile } from '../project.js';
 import { at, isJsxTag, packageName, usesOf } from './shared.js';
 

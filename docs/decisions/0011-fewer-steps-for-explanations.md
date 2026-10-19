@@ -1,4 +1,4 @@
-# 10. Fewer steps for explanations
+# 11. Fewer steps for explanations
 
 - Status: Accepted
 - Date: 2026-10-18

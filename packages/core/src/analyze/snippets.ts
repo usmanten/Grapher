@@ -1,6 +1,5 @@
 import type { Graph } from '../graph/types.js';
 import { scrub } from '../safety/detect.js';
-import type { AnalyzedFile } from './project.js';
 
 /** Long lines are cut so a snippet stays a glance, not a copy of the file. */
 export const MAX_SNIPPET_LENGTH = 160;
@@ -17,15 +16,15 @@ function snippetOf(line: string): string {
  * secret-looking replaced by `[hidden]`. Only one line is kept per location,
  * so as little code as possible leaves the parser.
  */
-export function addSnippets(graph: Graph, files: ReadonlyMap<string, AnalyzedFile>): void {
+export function addSnippets(graph: Graph, texts: ReadonlyMap<string, string>): void {
   const lines = new Map<string, string[]>();
   for (const connection of graph.connections) {
     for (const location of connection.locations) {
-      const file = files.get(location.path);
-      if (!file) continue;
+      const text = texts.get(location.path);
+      if (text === undefined) continue;
       let fileLines = lines.get(location.path);
       if (!fileLines) {
-        fileLines = file.source.getFullText().split(/\r?\n/);
+        fileLines = text.split(/\r?\n/);
         lines.set(location.path, fileLines);
       }
       const code = snippetOf(fileLines[location.line - 1] ?? '');

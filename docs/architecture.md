@@ -15,16 +15,16 @@ flowchart LR
   G --> H[Viewer index.html]
 ```
 
-| Stage        | Status | What it does                                                                                         |
-| ------------ | ------ | ---------------------------------------------------------------------------------------------------- |
-| Scan         | Done   | Lists the files that may be analyzed, skipping secrets, dependencies, build output and ignored files |
-| Read safely  | Done   | The only way to read file contents. Re-checks every rule at read time                                |
-| Parse        | Done   | Uses ts-morph to resolve imports, including path aliases like `@/lib/db`                             |
-| Detect       | Done   | Finds pages, API routes, fetch calls, server actions, database code, outside services and settings   |
-| Graph        | Done   | Writes a versioned `graph.json` with nodes, connections and file:line locations                      |
-| Explain      | Done   | The `/grapher` command in Claude Code writes short explanations from scrubbed snippets               |
-| Safety check | Done   | Scans everything Grapher writes for secret-like values and refuses to save if any are found          |
-| Viewer       | Done   | A single self-contained HTML page built with React and React Flow                                    |
+| Stage        | Status | What it does                                                                                             |
+| ------------ | ------ | -------------------------------------------------------------------------------------------------------- |
+| Scan         | Done   | Lists the files that may be analyzed, skipping secrets, dependencies, build output and ignored files     |
+| Read safely  | Done   | The only way to read file contents. Re-checks every rule at read time                                    |
+| Parse        | Done   | Each language pack reads its own files: ts-morph for JavaScript and TypeScript, Tree-sitter for the rest |
+| Detect       | Done   | Finds pages, API routes, fetch calls, server actions, database code, outside services and settings       |
+| Graph        | Done   | Writes a versioned `graph.json` with nodes, connections and file:line locations                          |
+| Explain      | Done   | The `/grapher` command in Claude Code writes short explanations from scrubbed snippets                   |
+| Safety check | Done   | Scans everything Grapher writes for secret-like values and refuses to save if any are found              |
+| Viewer       | Done   | A single self-contained HTML page built with React and React Flow                                        |
 
 ## Packages
 
@@ -51,9 +51,21 @@ A symlink can point anywhere, including outside the project or at a secret file 
 
 ## Analysis (`packages/core/src/analyze`)
 
+Code is read by **language packs** (see [ADR 0010](decisions/0010-language-packs.md)). `pack.ts` defines the shape every pack fills in: which files are mine, which file uses which, and what the special parts are (routes, databases, services, settings). `analyze.ts` hands each scanned file to the first pack in `DEFAULT_PACKS` that claims it, then runs every pack's steps into one shared `GraphBuilder`.
+
+**JavaScript and TypeScript (`packs/javascript`)**
+
 - **`project.ts`** loads every approved code file through the safe reader into a ts-morph project that lives only in memory (see [ADR 0006](decisions/0006-in-memory-parsing.md)). Path aliases come from `tsconfig.json` or `jsconfig.json`; `extends` is not followed.
 - **`next.ts`** knows the App Router conventions: which files are pages, layouts and routes, and which URL a route answers (route groups like `(marketing)` and `@slots` are dropped).
 - **`detectors/`** each look for one kind of connection: `imports`, `requests` (fetch, axios, ky), `navigation` (links, redirects and return addresses that open one of the app's pages), `settings` (`process.env`), `packages` (known services and databases), and `databases` (Prisma, Drizzle, Supabase tables and whether code reads, saves or deletes, plus Supabase database functions).
+
+**Other languages (`packs/basic`)**
+
+- Parses Python, Java, Go, Rust, C and C++, Ruby and PHP with Tree-sitter (`@vscode/tree-sitter-wasm`, loaded from local files) and maps which file uses which. `languages.ts` says how each language writes an import; `resolve.ts` turns an import into project files, preferring source folders (like `src/main/java/`) that contain the importing file. Go imports use the module path from `go.mod`.
+- It finds no routes, databases, services or settings. A full pack for a language, listed before it, takes over that language's files.
+
+**Shared**
+
 - **`builder.ts`** merges everything found between the same two nodes into one connection with one plain-word label, like "reads and saves users", keeping up to five code locations. Output is sorted so the same project always produces the same file.
 
 The output writer (`packages/core/src/output`) saves `.grapher/graph.json`, adds a `.gitignore` inside `.grapher/` so the folder is never committed, and refuses to write through a symlink.
@@ -72,7 +84,7 @@ The Grapher CLI never talks to an AI service itself ([ADR 0003](decisions/0003-n
 
 1. `grapher explain` maps the project, writes the page, and prints an **explain request**: as many connections without an up-to-date explanation as fit in about 24,000 characters, each numbered and listed with its two ends, its label and its scrubbed code lines. The request is checked for secrets before it is printed, and the data sits between marker lines containing a random value. Which connection each number stands for is kept in `.grapher/request.json`.
 2. Claude writes `{ "1": "<explanation>", "2": "…" }` to `.grapher/answers.json` with its Write tool.
-3. `grapher explain --save` keeps answers only for numbers that were asked about and whose code hasn't changed since, cleans them to plain text of at most 600 characters, refuses the whole answer if anything looks like a secret, and stores them in `.grapher/explanations.json`. If connections are still waiting, it prints the next request straight away, so each round is just "write, then save" ([ADR 0010](decisions/0010-fewer-steps-for-explanations.md)).
+3. `grapher explain --save` keeps answers only for numbers that were asked about and whose code hasn't changed since, cleans them to plain text of at most 600 characters, refuses the whole answer if anything looks like a secret, and stores them in `.grapher/explanations.json`. If connections are still waiting, it prints the next request straight away, so each round is just "write, then save" ([ADR 0011](decisions/0011-fewer-steps-for-explanations.md)).
 4. Each explanation is saved with a **fingerprint** of its connection (kind, label, tables and code lines, not line numbers). When the code changes, the fingerprint changes and the connection is explained again; otherwise the saved text is reused, so repeat runs cost almost nothing.
 
 **Unknown packages** come first. Before any connection is explained, `grapher explain` prints an **identify request** listing, by name only, the packages Grapher doesn't recognize. Claude answers with a kind for each (`service`, `database`, `library` or `unknown`) and a short label. `--save` keeps answers only for names that were asked about, records a missing answer as `unknown` so it is never asked again, and stores the result in `.grapher/packages.json`. On later runs, services and databases appear on the map marked "identified by AI", libraries stay off it, and anything still unidentified shows as a gray "not yet identified" box. Running `grapher graph` without Claude shows every unknown package that way.
