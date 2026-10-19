@@ -4,23 +4,27 @@ import {
   ANSWERS_FILE,
   type AnalysisResult,
   analyzeProject,
-  BATCH_SIZE,
   currentExplanations,
   explainPrompt,
   explainTasks,
+  type ExplanationCache,
   type Graph,
   type IdentifiedPackage,
   identifyPrompt,
   loadCache,
   loadIdentified,
+  loadRequest,
+  nextBatch,
   PACKAGE_BATCH_SIZE,
   parseIdentified,
   OUTPUT_DIR,
   parseAnswers,
   readOutputFile,
   removeOutputFile,
+  REQUEST_FILE,
   saveCache,
   saveIdentified,
+  saveRequest,
   type ScanResult,
   writeGraph,
   writeViewer,
@@ -68,21 +72,36 @@ function saveCommand(folder: string): string {
 }
 
 /**
- * Maps the project, then prints the next request for Claude: first the
- * packages Grapher doesn't know, by name only, then batches of connections
- * to explain. Says so when everything is done.
+ * The next request for Claude: first the packages Grapher doesn't know, by
+ * name only, then batches of connections to explain. Says so when
+ * everything is done.
  */
-export async function explainRequest(folder: string): Promise<string> {
-  const { graph, scan, identified } = await analyze(folder);
-  const cache = await loadCache(scan.root);
-  await writeOutputs(graph, scan, currentExplanations(graph, cache));
+async function nextRequest(
+  folder: string,
+  root: string,
+  graph: Graph,
+  identified: ReadonlyMap<string, unknown>,
+  cache: ExplanationCache,
+): Promise<string> {
   const packages = packagesToIdentify(graph, identified);
   if (packages.length > 0) return identifyPrompt(packages, saveCommand(folder));
   const tasks = explainTasks(graph, cache);
   if (tasks.length === 0) {
     return `All ${graph.connections.length} connections are explained. Open ${OUTPUT_DIR}/index.html to read them.`;
   }
-  return explainPrompt(tasks.slice(0, BATCH_SIZE), tasks.length, saveCommand(folder));
+  const batch = nextBatch(tasks);
+  const prompt = explainPrompt(batch, tasks.length, saveCommand(folder));
+  // Remembers which connection each number stands for, for the save.
+  await saveRequest(root, batch);
+  return prompt;
+}
+
+/** Maps the project and prints the next request for Claude. */
+export async function explainRequest(folder: string): Promise<string> {
+  const { graph, scan, identified } = await analyze(folder);
+  const cache = await loadCache(scan.root);
+  await writeOutputs(graph, scan, currentExplanations(graph, cache));
+  return nextRequest(folder, scan.root, graph, identified, cache);
 }
 
 /** Saves what Claude said the unknown packages are, and maps the project again. */
@@ -98,19 +117,12 @@ async function savePackages(
   await saveIdentified(root, identified);
   await removeOutputFile(root, ANSWERS_NAME);
   const { graph, scan } = await analyzeProject(folder, { identified });
-  await writeOutputs(graph, scan, currentExplanations(graph, await loadCache(scan.root)));
+  const cache = await loadCache(scan.root);
+  await writeOutputs(graph, scan, currentExplanations(graph, cache));
 
   const found = [...answers.values()].filter((e) => e.kind === 'service' || e.kind === 'database');
-  const lines = [
-    `Identified ${answers.size} package${answers.size === 1 ? '' : 's'}: ${found.length} added to the map as outside services or databases.`,
-  ];
-  const left = packagesToIdentify(graph, identified).length;
-  lines.push(
-    left > 0
-      ? `${left} more package${left === 1 ? '' : 's'} to identify. Run ${saveCommand(folder).replace(' --save', '')} for the next step.`
-      : `Run ${saveCommand(folder).replace(' --save', '')} for the next step.`,
-  );
-  return lines.join('\n');
+  const summary = `Identified ${answers.size} package${answers.size === 1 ? '' : 's'}: ${found.length} added to the map as outside services or databases.`;
+  return `${summary}\n\n${await nextRequest(folder, root, graph, identified, cache)}`;
 }
 
 /**
@@ -128,27 +140,35 @@ export async function explainSave(folder: string): Promise<string> {
   if (packages.length > 0) return savePackages(folder, scan.root, raw, packages, identified);
 
   const cache = await loadCache(scan.root);
-  const tasks = explainTasks(graph, cache);
-  const { accepted, skipped } = parseAnswers(raw, tasks);
-  for (const task of tasks) {
-    const text = accepted[task.id];
-    if (text !== undefined) cache.entries[task.id] = { fingerprint: task.fingerprint, text };
+  const requested = await loadRequest(scan.root, explainTasks(graph, cache));
+  if (requested === undefined) {
+    throw new Error(`No request found. Run ${saveCommand(folder).replace(' --save', '')} first.`);
+  }
+  const { accepted, skipped } = parseAnswers(raw, requested);
+  for (const task of requested) {
+    const text = task && accepted[task.id];
+    if (task && text !== undefined) {
+      cache.entries[task.id] = { fingerprint: task.fingerprint, text };
+    }
   }
   await saveCache(scan.root, cache);
   await removeOutputFile(scan.root, ANSWERS_NAME);
+  await removeOutputFile(scan.root, REQUEST_FILE);
   await writeOutputs(graph, scan, currentExplanations(graph, cache));
 
   const saved = Object.keys(accepted).length;
-  const left = tasks.length - saved;
   const lines = [
     `Saved ${saved} explanation${saved === 1 ? '' : 's'} and updated ${OUTPUT_DIR}/index.html.`,
   ];
   if (skipped.length > 0)
-    lines.push(`Ignored ${skipped.length} answer(s) for connections that weren't asked about.`);
-  lines.push(
-    left > 0
-      ? `${left} connection${left === 1 ? '' : 's'} still need an explanation. Run ${saveCommand(folder).replace(' --save', '')} for the next batch.`
-      : 'Every connection is explained.',
-  );
-  return lines.join('\n');
+    lines.push(
+      `Ignored ${skipped.length} answer(s) for connections that weren't asked about or changed since.`,
+    );
+  if (explainTasks(graph, cache).length === 0) {
+    lines.push('Every connection is explained.');
+    return lines.join('\n');
+  }
+  // The next request is printed straight away, so Claude doesn't need an
+  // extra step to ask for it.
+  return `${lines.join('\n')}\n\n${await nextRequest(folder, scan.root, graph, identified, cache)}`;
 }

@@ -29,10 +29,16 @@ async function run(...argv: string[]) {
   return { code, out: out.join('\n'), err: err.join('\n') };
 }
 
-function requestedIds(prompt: string): string[] {
+interface Requested {
+  n: number;
+  from: string;
+  to: string;
+}
+
+function requested(prompt: string): Requested[] {
   const marker = /^(GRAPHER-DATA-[0-9a-f]+) BEGIN$/m.exec(prompt)?.[1] ?? '';
   const data = prompt.split(`${marker} BEGIN\n`)[1]?.split(`\n${marker} END`)[0] ?? '[]';
-  return (JSON.parse(data) as { id: string }[]).map((t) => t.id);
+  return JSON.parse(data) as Requested[];
 }
 
 describe('grapher explain', () => {
@@ -41,12 +47,13 @@ describe('grapher explain', () => {
     expect(request.code).toBe(0);
     expect(request.out).toContain('GRAPHER EXPLAIN REQUEST: 1 connection');
     expect(request.out).toContain(`Then run: grapher explain ${JSON.stringify(dir)} --save`);
-    const ids = requestedIds(request.out);
-    expect(ids).toEqual(['file:app/page.tsx->file:lib/db.ts']);
+    expect(requested(request.out)).toMatchObject([
+      { n: 1, from: 'app/page.tsx (page for /)', to: 'lib/db.ts (module)' },
+    ]);
 
     await writeFile(
       path.join(dir, '.grapher/answers.json'),
-      JSON.stringify({ [ids[0] ?? '']: 'The home page reads the list of users from lib/db.ts.' }),
+      JSON.stringify({ 1: 'The home page reads the list of users from lib/db.ts.' }),
     );
     const save = await run('explain', dir, '--save');
     expect(save.code).toBe(0);
@@ -67,11 +74,8 @@ describe('grapher explain', () => {
   });
 
   it('asks again when the code behind a connection changes', async () => {
-    const ids = requestedIds((await run('explain', dir)).out);
-    await writeFile(
-      path.join(dir, '.grapher/answers.json'),
-      JSON.stringify({ [ids[0] ?? '']: 'Old.' }),
-    );
+    await run('explain', dir);
+    await writeFile(path.join(dir, '.grapher/answers.json'), JSON.stringify({ 1: 'Old.' }));
     await run('explain', dir, '--save');
 
     await writeFile(
@@ -81,12 +85,51 @@ describe('grapher explain', () => {
     expect((await run('explain', dir)).out).toContain('GRAPHER EXPLAIN REQUEST: 1 connection');
   });
 
+  it('prints the next request right after saving part of the answers', async () => {
+    await writeFile(
+      path.join(dir, 'lib/auth.ts'),
+      "import { db } from './db';\nexport const user = () => db.users[0];",
+    );
+    await writeFile(
+      path.join(dir, 'app/page.tsx'),
+      "import { db } from '../lib/db';\nimport { user } from '../lib/auth';\nexport default function Page() { return db.users.length + String(user()); }",
+    );
+    const first = requested((await run('explain', dir)).out);
+    expect(first).toHaveLength(3);
+    await writeFile(
+      path.join(dir, '.grapher/answers.json'),
+      JSON.stringify({ 1: 'The home page uses a helper.' }),
+    );
+
+    const save = await run('explain', dir, '--save');
+
+    expect(save.out).toContain('Saved 1 explanation');
+    expect(save.out).toContain('GRAPHER EXPLAIN REQUEST: 2 connections');
+    // Renumbered from 1, for the connections still waiting.
+    expect(requested(save.out)).toEqual(first.slice(1).map((c, i) => ({ ...c, n: i + 1 })));
+  });
+
+  it("doesn't save an answer for code that changed after the request", async () => {
+    await run('explain', dir);
+    await writeFile(
+      path.join(dir, 'app/page.tsx'),
+      "import { db } from '../lib/db';\nexport default function Page() { return db.users.at(0); }",
+    );
+    await writeFile(path.join(dir, '.grapher/answers.json'), JSON.stringify({ 1: 'Stale.' }));
+
+    const save = await run('explain', dir, '--save');
+
+    expect(save.out).toContain('Saved 0 explanations');
+    expect(save.out).toContain('GRAPHER EXPLAIN REQUEST: 1 connection');
+    expect(await readFile(path.join(dir, '.grapher/index.html'), 'utf8')).not.toContain('Stale.');
+  });
+
   it('saves nothing when an answer contains a secret', async () => {
-    const ids = requestedIds((await run('explain', dir)).out);
+    await run('explain', dir);
     const fake = ['sk', 'live', 'FAKEanswerForCliTest', 'z9'].join('_');
     await writeFile(
       path.join(dir, '.grapher/answers.json'),
-      JSON.stringify({ [ids[0] ?? '']: `Uses the key ${fake}.` }),
+      JSON.stringify({ 1: `Uses the key ${fake}.` }),
     );
 
     const save = await run('explain', dir, '--save');
@@ -158,6 +201,8 @@ describe('identifying unknown packages', () => {
     const save = await run('explain', dir, '--save');
     expect(save.code).toBe(0);
     expect(save.out).toContain('Identified 4 packages: 2 added to the map');
+    // The next request comes straight after, so Claude needs no extra step.
+    expect(save.out).toContain('GRAPHER EXPLAIN REQUEST');
 
     const after = JSON.parse((await run('graph', dir, '--json')).out) as {
       nodes: { id: string; label?: string; identifiedBy?: string; unidentified?: boolean }[];
