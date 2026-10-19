@@ -16,7 +16,7 @@ export const PACKAGE_BATCH_SIZE = 60;
 const MAX_LABEL_LENGTH = 40;
 const KINDS = new Set<IdentifiedPackage['kind']>(['service', 'database', 'library', 'unknown']);
 
-/** True for a real npm package name, so nothing else can be passed off as one. */
+/** True for a real package name (npm or Python), so nothing else can be passed off as one. */
 function isPackageName(name: string): boolean {
   return packageName(name) === name;
 }
@@ -78,7 +78,7 @@ export function identifyPrompt(names: readonly string[], saveCommand: string): s
   const marker = `GRAPHER-DATA-${randomBytes(6).toString('hex')}`;
   return `GRAPHER IDENTIFY REQUEST: ${asked.length} package${asked.length === 1 ? '' : 's'}
 
-The project imports these npm packages, which Grapher doesn't recognize. Say what each one is, judging by its name and what you know about it.
+The project imports these packages (from npm or Python), which Grapher doesn't recognize. Say what each one is, judging by its name and what you know about it.
 
 Kinds:
 - "service": talks to an outside service over the internet, like a payments, email, shipping or AI API.

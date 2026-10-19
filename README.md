@@ -91,7 +91,16 @@ Add `--json` to either command for machine-readable output. Try it on the includ
 | Outside services           | Stripe, Resend, Shippo, OpenAI and more than 30 others by package, outside web APIs by host, and anything else Claude identifies |
 | Settings                   | `process.env.STRIPE_SECRET_KEY`, by name only                                                                                    |
 
-Other languages get a basic map: for Python, Java, Go, Rust, C and C++, Ruby and PHP, Grapher shows which file uses which, but not yet routes, databases, services or settings.
+**Python** gets a full map too:
+
+| It finds                   | For example                                                                                                                                                                |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web routes                 | `@app.route('/login', methods=['POST'])` in Flask, `@router.get('/{id}')` in FastAPI, `path('blog/', ...)` in Django, with blueprint and router prefixes                   |
+| Databases and their tables | SQLAlchemy, Flask-SQLAlchemy, SQLModel and the Django ORM (which tables are read, saved or deleted), hand-written SQL, plus Postgres, MongoDB, Redis and others by package |
+| Outside services           | Stripe, OpenAI, AWS and others by package, outside web APIs called with `requests` or `httpx`, and anything else Claude identifies                                         |
+| Settings                   | `os.environ['NAME']`, `os.getenv('NAME')`, python-decouple, django-environ and pydantic settings, by name only                                                             |
+
+Other languages get a basic map: for Java, Go, Rust, C and C++, Ruby and PHP, Grapher shows which file uses which, but not yet routes, databases, services or settings.
 
 Not yet supported: the Pages Router (`pages/`, Grapher shows a warning).
 
@@ -136,7 +145,7 @@ See [SECURITY.md](SECURITY.md) and the [threat model](docs/threat-model.md) for 
 - [x] Tried on a real project, with page links, Supabase functions and AI-identified packages added from what it found
 - [x] v0.1.0 release
 
-Next: publishing to npm, marking files nothing uses, Pages Router support, Python projects, a "what changed since the last commit" view, and watch mode.
+Next: publishing to npm, marking files nothing uses, Pages Router support, full maps for more languages, a "what changed since the last commit" view, and watch mode.
 
 ## Contributing
 

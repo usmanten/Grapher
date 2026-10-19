@@ -18,7 +18,13 @@ function nodeName(node: GraphNode): string {
 function nodeIs(node: GraphNode): string {
   switch (node.kind) {
     case 'file': {
-      const where = node.urlPath ? ` for ${node.urlPath}` : '';
+      const routes = node.routes?.map((r) => `${r.methods.join(', ')} ${r.path}`.trim());
+      const where =
+        routes && routes.length > 1
+          ? ` for ${routes.slice(0, 5).join('; ')}${routes.length > 5 ? ' and more' : ''}`
+          : node.urlPath
+            ? ` for ${node.urlPath}`
+            : '';
       const runs = node.client ? ', runs in the browser' : '';
       return `${node.role}${where}${runs}`;
     }
@@ -26,7 +32,7 @@ function nodeIs(node: GraphNode): string {
       return node.via ? `database, used through ${node.via}` : 'database';
     case 'service':
       return node.unidentified === true
-        ? 'npm package nobody has identified yet; it may or may not talk to anything outside the app'
+        ? 'package nobody has identified yet; it may or may not talk to anything outside the app'
         : 'outside service';
     case 'setting':
       return node.public ? 'setting visible in the browser' : 'secret setting (value never shown)';

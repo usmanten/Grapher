@@ -48,7 +48,28 @@ function stringContent(node: Node | null): string | undefined {
   return quoted;
 }
 
-const python: BasicLanguage = {
+/**
+ * Where a Python module might live: `a.b` may be a/b.py or the package
+ * a/b/__init__.py, and `.models` is next to the importing file.
+ */
+export function pythonModuleCandidates(path: string, module: string): Candidate[] {
+  const relative = /^(\.+)(.*)$/.exec(module);
+  if (relative) {
+    const ups = (relative[1] ?? '.').length - 1;
+    const base = joinPath(
+      dirname(path),
+      ...Array<string>(ups).fill('..'),
+      dotted(relative[2] ?? ''),
+    );
+    if (base === undefined) return [];
+    const init = { path: base === '' ? '__init__.py' : `${base}/__init__.py` };
+    // `from . import x` names the package itself, which only has an __init__.py.
+    return relative[2] ? [{ path: `${base}.py` }, init] : [init];
+  }
+  return [{ suffix: `${dotted(module)}.py` }, { suffix: `${dotted(module)}/__init__.py` }];
+}
+
+export const python: BasicLanguage = {
   name: 'Python',
   grammar: 'python',
   extensions: ['.py'],
@@ -56,22 +77,7 @@ const python: BasicLanguage = {
     /(?:^|\/)(?:test_[^/]*|[^/]*_test|conftest)\.py$/.test(p) || /(?:^|\/)tests?\//.test(p),
   imports(root, path) {
     const refs: ImportRef[] = [];
-    const moduleCandidates = (module: string): Candidate[] => {
-      const relative = /^(\.+)(.*)$/.exec(module);
-      if (relative) {
-        const ups = (relative[1] ?? '.').length - 1;
-        const base = joinPath(
-          dirname(path),
-          ...Array<string>(ups).fill('..'),
-          dotted(relative[2] ?? ''),
-        );
-        if (base === undefined) return [];
-        const init = { path: base === '' ? '__init__.py' : `${base}/__init__.py` };
-        // `from . import x` names the package itself, which only has an __init__.py.
-        return relative[2] ? [{ path: `${base}.py` }, init] : [init];
-      }
-      return [{ suffix: `${dotted(module)}.py` }, { suffix: `${dotted(module)}/__init__.py` }];
-    };
+    const moduleCandidates = (module: string) => pythonModuleCandidates(path, module);
 
     for (const stmt of root.descendantsOfType('import_statement')) {
       if (!stmt) continue;

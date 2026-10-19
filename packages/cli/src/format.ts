@@ -59,7 +59,12 @@ export function formatGraphSummary(graph: Graph): string {
   const count = (test: (n: Graph['nodes'][number]) => boolean) => graph.nodes.filter(test).length;
   const files = count((n) => n.kind === 'file');
   const pages = count((n) => n.kind === 'file' && n.role === 'page');
-  const routes = count((n) => n.kind === 'file' && n.role === 'route');
+  // Flask, FastAPI and Django files can hold many routes each, so those are counted one by one.
+  const webRoutes = graph.nodes.some((n) => n.kind === 'file' && n.routes !== undefined);
+  const routes = graph.nodes.reduce(
+    (sum, n) => sum + (n.kind === 'file' && n.role === 'route' ? (n.routes?.length ?? 1) : 0),
+    0,
+  );
   const databases = graph.nodes.filter((n) => n.kind === 'database').map((n) => n.label);
   const services = graph.nodes.flatMap((n) =>
     n.kind === 'service' && n.unidentified !== true ? [n.label] : [],
@@ -68,7 +73,7 @@ export function formatGraphSummary(graph: Graph): string {
 
   const lines = [
     `Mapped ${printable(graph.project.name)}`,
-    `  ${plural(files, 'file')}, including ${plural(pages, 'page')} and ${plural(routes, 'API route')}`,
+    `  ${plural(files, 'file')}, including ${plural(pages, 'page')} and ${plural(routes, webRoutes ? 'web route' : 'API route')}`,
     `  ${plural(graph.connections.length, 'connection')}`,
   ];
   if (databases.length > 0) lines.push(`  Databases: ${databases.map(printable).join(', ')}`);

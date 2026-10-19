@@ -57,4 +57,27 @@ describe('formatGraphSummary', () => {
     expect(text).toContain('Not yet identified: mystery-sdk');
     expect(text).not.toContain('Outside services');
   });
+
+  it('counts each Flask, FastAPI or Django route on its own', () => {
+    const text = formatGraphSummary({
+      schemaVersion: 1,
+      project: { name: 'api', framework: 'flask' },
+      nodes: [
+        {
+          id: 'file:app.py',
+          kind: 'file',
+          path: 'app.py',
+          role: 'route',
+          routes: [
+            { path: '/', methods: ['GET'] },
+            { path: '/login', methods: ['POST'] },
+          ],
+        },
+      ],
+      connections: [],
+      unknownPackages: [],
+      warnings: [],
+    });
+    expect(text).toContain('1 file, including 0 pages and 2 web routes');
+  });
 });

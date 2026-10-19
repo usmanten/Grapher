@@ -1,6 +1,7 @@
-import type { Connection, Graph, GraphNode, ViewerData } from '@grapher/core';
+import type { Connection, Graph, GraphNode, ViewerData, WebRoute } from '@grapher/core';
 
 const NODE_KINDS = new Set(['file', 'database', 'service', 'setting']);
+const FRAMEWORKS = new Set(['next-app-router', 'flask', 'fastapi', 'django']);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -21,6 +22,18 @@ function stringRecord(value: unknown): Record<string, string> {
 
 function isNode(value: unknown): value is GraphNode {
   return isRecord(value) && typeof value.id === 'string' && NODE_KINDS.has(value.kind as string);
+}
+
+/** Keeps only well-formed web routes on a file node, so the text built from them can't break. */
+function cleanRoutes(node: GraphNode): GraphNode {
+  if (node.kind !== 'file' || node.routes === undefined) return node;
+  const routes: unknown = node.routes;
+  const clean = Array.isArray(routes)
+    ? routes.filter(
+        (r): r is WebRoute => isRecord(r) && typeof r.path === 'string' && isStringArray(r.methods),
+      )
+    : [];
+  return { ...node, routes: clean };
 }
 
 function isConnection(value: unknown): value is Connection {
@@ -44,7 +57,7 @@ export function parseViewerData(raw: unknown): ViewerData | undefined {
   if (!isRecord(raw) || !isRecord(raw.graph)) return undefined;
   const graph = raw.graph;
   if (!Array.isArray(graph.nodes) || !Array.isArray(graph.connections)) return undefined;
-  const nodes = graph.nodes.filter(isNode);
+  const nodes = graph.nodes.filter(isNode).map(cleanRoutes);
   const ids = new Set(nodes.map((n) => n.id));
   const connections = graph.connections
     .filter(isConnection)
@@ -54,7 +67,9 @@ export function parseViewerData(raw: unknown): ViewerData | undefined {
     schemaVersion: 1,
     project: {
       name: typeof project.name === 'string' ? project.name : 'project',
-      framework: project.framework === 'next-app-router' ? 'next-app-router' : 'unknown',
+      framework: FRAMEWORKS.has(project.framework as string)
+        ? (project.framework as Graph['project']['framework'])
+        : 'unknown',
     },
     nodes,
     connections,
