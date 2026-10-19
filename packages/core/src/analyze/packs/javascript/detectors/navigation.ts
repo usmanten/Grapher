@@ -1,6 +1,6 @@
 import { type Node, SyntaxKind } from 'ts-morph';
 
-import type { GraphBuilder } from '../builder.js';
+import type { GraphBuilder } from '../../../builder.js';
 import { matchRoute } from '../next.js';
 import type { AnalysisContext, AnalyzedFile } from '../project.js';
 import { requestUrl, type RouteTarget } from './requests.js';

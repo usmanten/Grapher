@@ -1,7 +1,7 @@
 import { type CallExpression, type Node, SyntaxKind } from 'ts-morph';
 
-import type { HttpMethod } from '../../graph/types.js';
-import type { GraphBuilder } from '../builder.js';
+import type { HttpMethod } from '../../../../graph/types.js';
+import type { GraphBuilder } from '../../../builder.js';
 import { matchRoute, UNKNOWN_SEGMENT } from '../next.js';
 import type { AnalysisContext, AnalyzedFile } from '../project.js';
 import { at, stringValue } from './shared.js';

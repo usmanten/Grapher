@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- A basic map for projects in other languages: Grapher now shows which file uses which in Python, Java, Go, Rust, C and C++, Ruby and PHP code, read with Tree-sitter. Routes, databases, services and settings are still found in JavaScript and TypeScript only.
+
+### Changed
+
+- Code is now read through language packs, one per language, so adding a language no longer means changing the rest of Grapher. The JavaScript and TypeScript reader is the first pack, and its maps are unchanged.
+- The "No Next.js app/ folder" warning is no longer shown for projects that have no JavaScript or TypeScript files.
+
 ### Fixed
 
 - Grapher no longer refuses to save the map when the project's folder path mixes capitals and digits, like `/home/you/code/2024/FinalProject-Web`. The folder is now checked one folder name at a time, so a folder named like a key is still caught.

@@ -91,7 +91,9 @@ Add `--json` to either command for machine-readable output. Try it on the includ
 | Outside services           | Stripe, Resend, Shippo, OpenAI and more than 30 others by package, outside web APIs by host, and anything else Claude identifies |
 | Settings                   | `process.env.STRIPE_SECRET_KEY`, by name only                                                                                    |
 
-Not yet supported: the Pages Router (`pages/`, Grapher shows a warning), and languages other than TypeScript and JavaScript.
+Other languages get a basic map: for Python, Java, Go, Rust, C and C++, Ruby and PHP, Grapher shows which file uses which, but not yet routes, databases, services or settings.
+
+Not yet supported: the Pages Router (`pages/`, Grapher shows a warning).
 
 ## How it works
 
